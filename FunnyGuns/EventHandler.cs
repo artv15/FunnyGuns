@@ -492,7 +492,6 @@ namespace FunnyGuns
                 {
                     if (Mutators.isFallDamageFatal)
                     {
-                        ev.IsAllowed = false;
                         ev.Target.Kill(DamageTypes.Falldown);
                     }
                 }
