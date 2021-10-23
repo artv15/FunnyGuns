@@ -1,5 +1,6 @@
 ﻿using Exiled.API.Features;
 using Exiled.Events.EventArgs;
+using InventorySystem.Items;
 using MEC;
 using System;
 using System.Collections.Generic;
@@ -120,9 +121,11 @@ namespace FunnyGuns
                             {
                                 case 1:
                                     pl.Role = RoleType.NtfPrivate;
+                                    pl.AddItem(ItemType.KeycardNTFCommander);
                                     break;
                                 case 2:
                                     pl.Role = RoleType.NtfSergeant;
+                                    pl.AddItem(ItemType.KeycardNTFCommander);
                                     break;
                                 case 3:
                                     pl.Role = RoleType.NtfCaptain;
@@ -248,7 +251,7 @@ namespace FunnyGuns
                     {
                         CI += 1;
                     }
-                    Log.Debug($"CI: {CI}, NTF: {MTF}");
+                    //Log.Debug($"CI: {CI}, NTF: {MTF}");
                     if (Plugin.CountList == 1)
                     {
                         lastStanding = pl.Id;
