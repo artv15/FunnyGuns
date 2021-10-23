@@ -73,6 +73,7 @@ namespace FunnyGuns
             Plugin.stage = 1;
             Plugin.secondsTillNextStage = 300;
             Timing.KillCoroutines("eventcontrol");
+            Timing.KillCoroutines("gamePrep");
             Mutators.DisableWH();
             Mutators.areShotsMoreDeadly = false;
             Mutators.areLightsDown = false;
@@ -83,7 +84,7 @@ namespace FunnyGuns
 
         public static void PlayerFuckingDied(DiedEventArgs ev)
         {
-            Cassie.Message($"Unit {ev.Target.Id} terminated");
+            Cassie.Message($"Unit {ev.Target.Id} terminated", false, false);
         }
 
         static void PlayerSpawn()
@@ -198,7 +199,7 @@ namespace FunnyGuns
             int i = 45;
             while (i > 0)
             {
-                pl.ShowHint($"\n\n\n\n\n\nФаза подготовки, <color=blue>идите в комплекс</color> или <color=red>готовьтесь обороняться</color>>!\nОсталось <color=yellow>{i}</color> секунд.");
+                pl.ShowHint($"\n\n\n\n\n\nФаза подготовки, <color=blue>идите в комплекс</color> или <color=red>готовьтесь обороняться</color>!\n<color=green>Урон во время фазы подготовки отключён.</color>\nОсталось <color=yellow>{i}</color> секунд.\n<color=yellow>Чтобы узнать об ивенте, напишите в консоли .fg_event_info</color>");
                 i -= 1;
                 yield return Timing.WaitForSeconds(1f);
             }
@@ -206,6 +207,7 @@ namespace FunnyGuns
 
         static IEnumerator<float> GameController()
         {
+            Plugin.isPrep = true;
             foreach (var door in Map.Doors)
             {
                 if (door.Nametag == "SURFACE_GATE")
@@ -216,9 +218,10 @@ namespace FunnyGuns
             }
             foreach (var pl in Plugin.active_playerlist)
             {
-                Timing.RunCoroutine(gameStartingNotification(pl));
+                Timing.RunCoroutine(gameStartingNotification(pl), "gamePrep");
             }
             yield return Timing.WaitForSeconds(45f);
+            Cassie.Message(".g4 .g4 .g4 . . .g4 .g4 .g4 . . .g4 .g4 .g4", false, false);
             foreach (var door in Map.Doors)
             {
                 if (door.Nametag == "SURFACE_GATE")
@@ -226,6 +229,7 @@ namespace FunnyGuns
                     door.ChangeLock(Exiled.API.Enums.DoorLockType.None);
                 }
             }
+            Plugin.isPrep = false;
             int MTF = 0;
             int CI = 0;
             int lastStanding = 0;
@@ -256,7 +260,7 @@ namespace FunnyGuns
                     string message = $"All {(MTF == 0 ? "MTFUnits" : "Chaos agents")} have been terminated .";
                     if (Plugin.CountList == 1)
                     {
-                        message += $" Last {(MTF == 0 ? "MTFUnit" : "Chaos agent")} detected . Unit {lastStanding} has survived";
+                        message += $"Last {(MTF == 0 ? "Chaos agent" : "MTFUnit")} detected . Unit {lastStanding} has survived";
                     }
                     Cassie.Message(message);
                     StopEvent();
@@ -270,7 +274,19 @@ namespace FunnyGuns
                     {
                         Plugin.secondsTillNextStage -= 1;
                         yield return Timing.WaitForSeconds(1f);
-                        //Mutators are added to status bar here (switch clause)!
+                        //Status bar and mutators display here!
+                        string color;
+                        switch (Plugin.stage) {
+                            case 1:
+                                color = "green";
+                                break;
+                            case 2:
+                                color = "yellow";
+                                break;
+                            case 3:
+                                color = "red";
+                                break;
+                        }
                         foreach (var pl in Player.List) 
                         {
                             string msg = $"\n\n\n\n\n\nТекущая стадия: {Plugin.stage}. Время до следующей стадии: {Plugin.secondsTillNextStage}";
@@ -304,7 +320,7 @@ namespace FunnyGuns
                             }
                             if (Mutators.isFallDamageFatal)
                             {
-                                msg += $"<color=red>Падение с большой высоты фатально</color>";
+                                msg += $"<color=red>Падение с любой высоты фатально</color>";
                                 if (Mutators.noRegen || Mutators.legalWH)
                                 {
                                     msg += ", ";
@@ -418,6 +434,16 @@ namespace FunnyGuns
                                 {
                                     break;
                                 }
+                                else
+                                {
+                                    foreach (var pl in Plugin.active_playerlist)
+                                    {
+                                        if (pl.Role != RoleType.Spectator)
+                                        {
+                                            pl.ShowHint("Уничтожте всех");
+                                        }
+                                    }
+                                }
                                 yield return Timing.WaitForSeconds(0.5f);
                             }
                             Warhead.IsLocked = false;
@@ -435,42 +461,49 @@ namespace FunnyGuns
 
         public static void OnHurt(HurtingEventArgs ev)
         {
-            if (isWeaponDamage(ev.DamageType) && Plugin.isRunning)
+            if (!Plugin.isPrep && Plugin.isRunning)
             {
-                if (Mutators.areShotsMoreDeadly)
+                if (isWeaponDamage(ev.DamageType) && Plugin.isRunning)
                 {
-                    ev.Amount = (int)(ev.Amount * 1.5f);
+                    if (Mutators.areShotsMoreDeadly)
+                    {
+                        ev.Amount = (int)(ev.Amount * 1.5f);
+                    }
+                    if (ev.Amount <= 20)
+                    {
+                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 5f, false);
+                        Log.Debug("Damage under or euqal 20 received!");
+                    }
+                    else if (ev.Amount <= 50)
+                    {
+                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 7f, false);
+                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 4f, false);
+                        Log.Debug("Damage under or euqal 50 received!");
+                    }
+                    else if (ev.Amount > 50)
+                    {
+                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 8f, false);
+                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 7f, false);
+                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Amnesia, 9f, false);
+                        Log.Debug("Damage bigger 50 received!");
+                    }
                 }
-                if (ev.Amount <= 20)
+                else if (ev.DamageType == DamageTypes.Falldown)
                 {
-                    ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 5f, false);
-                    Log.Debug("Damage under or euqal 20 received!");
+                    if (Mutators.isFallDamageFatal)
+                    {
+                        ev.IsAllowed = false;
+                        ev.Target.Kill(DamageTypes.Falldown);
+                    }
                 }
-                else if (ev.Amount <= 50)
+                else
                 {
-                    ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 7f, false);
-                    ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 4f, false);
-                    Log.Debug("Damage under or euqal 50 received!");
-                }
-                else if (ev.Amount > 50)
-                {
-                    ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 8f, false);
-                    ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 7f, false);
-                    ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Amnesia, 9f, false);
-                    Log.Debug("Damage bigger 50 received!");
+                    Log.Debug($"Player was damaged, but not by weapon. {(Plugin.isOverriden ? "Override is on" : "Override is off")}");
                 }
             }
-            else if (ev.DamageType == DamageTypes.Falldown)
+            else if (Plugin.isRunning && Plugin.isPrep)
             {
-                if (Mutators.isFallDamageFatal)
-                {
-                    ev.Target.Health = 0f;
-                    ev.Target.Kill(DamageTypes.Falldown);
-                }
-            }
-            else
-            {
-                Log.Debug($"Player was damaged, but not by weapon. {(Plugin.isOverriden ? "Override is on" : "Override is off")}");
+                ev.IsAllowed = false;
             }
         }
 

@@ -12,7 +12,7 @@ namespace FunnyGuns
     class Mutators
     {
         /*
-        This is the most unefficent way of storing mutators' functions.
+        This is the most unefficent way of storing mutators' functions and booleans.
         *Clap clap moment intensifies*
         */
         public static bool areLightsDown;
@@ -26,7 +26,7 @@ namespace FunnyGuns
         public static void LightsDown()
         {
             Cassie.Message("Danger . light control system is .g4 .g4 .g4 error . error .g4 .g4 .g1. g2 3 . 2 . 1");
-            Timing.CallDelayed(Cassie.CalculateDuration("Danger . light control system is .g4 .g4 .g4 error . error .g4 .g4 .g1. g2 3 . 2 . 1"), () =>
+            Timing.CallDelayed(Cassie.CalculateDuration("Danger . light control system is .g4 .g4 .g4 error . error .g4 .g4 .g1. g2 3 . 2 . 1") + 3f, () =>
             {
                 Map.TurnOffAllLights(10000f, Exiled.API.Enums.ZoneType.Unspecified);
                 areLightsDown = true;

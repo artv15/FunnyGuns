@@ -44,7 +44,7 @@ namespace FunnyGuns
             Log.Info("║                 (BETA)                 ║");
             Log.Info("║ Made by Treeshold(aka. Star Butterfly) ║");
             Log.Info("╚════════════════════════════════════════╝");
-            Log.Error("Warning! Private Beta! This can be trash or something idk");
+            Log.Warn("Warning! Private Beta! Do not redistribute!");
 
             Server.RoundStarted += lh.OnRoundStarted;
             Server.WaitingForPlayers += lh.OnWaitingForPlayers;
