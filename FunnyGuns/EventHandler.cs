@@ -75,6 +75,7 @@ namespace FunnyGuns
             Plugin.secondsTillNextStage = 300;
             Timing.KillCoroutines("eventcontrol");
             Timing.KillCoroutines("gamePrep");
+            Mutators.usedMutators.Clear();
             Mutators.DisableWH();
             Mutators.areShotsMoreDeadly = false;
             Mutators.areLightsDown = false;
@@ -165,6 +166,10 @@ namespace FunnyGuns
                             {
                                 case 1:
                                     pl.Role = RoleType.ChaosRifleman;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.KeycardChaosInsurgency);
+                                    pl.AddItem(ItemType.GunRevolver);
+                                    pl.AddItem(ItemType.GunAK); //Return to here plz
                                     break;
                                 case 2:
                                     pl.Role = RoleType.ChaosMarauder;
@@ -533,6 +538,7 @@ namespace FunnyGuns
         {
             Log.Debug("Playerlist cleared!");
             Plugin.playerlist.Clear();
+            Mutators.usedMutators.Clear();
             Plugin.isRunning = false;
             Plugin.isOverriden = false;
             Plugin.isPlayerOverriden = false;
