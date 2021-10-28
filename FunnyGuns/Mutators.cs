@@ -20,6 +20,7 @@ namespace FunnyGuns
         public static bool areShotsMoreDeadly;
         public static bool isFallDamageFatal;
         public static bool legalWH;
+        public static bool fastRun;
 
         public static List<int> usedMutators = new List<int>();
 
@@ -31,6 +32,24 @@ namespace FunnyGuns
                 Map.TurnOffAllLights(10000f, Exiled.API.Enums.ZoneType.Unspecified);
                 areLightsDown = true;
             });
+        }
+
+        public static void runFastOn()
+        {
+            fastRun = true;
+            foreach (var pl in Player.List)
+            {
+                pl.EnableEffect(Exiled.API.Enums.EffectType.Scp207);
+            }
+        }
+
+        public static void runFastOff()
+        {
+            fastRun = false;
+            foreach (var pl in Player.List)
+            {
+                pl.DisableEffect(Exiled.API.Enums.EffectType.Scp207);
+            }
         }
 
         public static void RegenOff()

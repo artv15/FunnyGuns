@@ -16,7 +16,7 @@ namespace FunnyGuns.Commands
 
         public string[] Aliases => null;
 
-        public string Description => "Overrides damages from guns to all damage types or player amount control. Lasts until round is restarted.";
+        public string Description => "This command was intended for development, but you can override player checks or damage checks here.";
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
@@ -69,14 +69,15 @@ namespace FunnyGuns.Commands
                         }
                         break;
                     default:
-                        response = "Syntax: \nfg_override damage\nfg_override players";
+                        response = "Syntax: \nfg_override damage\nfg_override players\n\n<color=yellow>Warning! This command may break everything! I have warned you!</color>";
                         return false;
                         break;
                 }
             }
             else
             {
-                response = "Insufficent Permissions. Required: fg.override. Contact owner or local system administator if you beleive this is a mistake!";
+                response = "Insufficent Permissions. Required: fg.override. Contact owner or local system administator if you beleive this is a mistake!\n\nIf you are an owner/local system administator, edit permissions.yml in Exiled config folder to grant permission to a certain group, " +
+                    "then type reload all in RA to apply permission changes!";
                 return false;
             }
             

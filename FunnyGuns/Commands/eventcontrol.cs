@@ -15,7 +15,7 @@ namespace FunnyGuns.Commands
 
         public string[] Aliases => null;
 
-        public string Description => "Controls event start/stop. Type help for... help..?";
+        public string Description => "Starts or stops event, type without any argument to see possible subcommands!";
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
@@ -34,43 +34,38 @@ namespace FunnyGuns.Commands
             {
                 switch (firstarg)
                 {
-                    case "help":
-                        message = "fg_event start - Starts event, controlled by plugin itself\nfg_event stop - Stops event.\nfg_event help - This command.";
-                        success = true;
-                        break;
                     case "start":
-                        if (Plugin.isRunning)
+                        if (Round.IsStarted)
                         {
-                            message = "Event is already running, stop the event or wait until it ends!";
-                            success = false;
-                        }
-                        else
-                        {
-                            if (!Exiled.API.Features.Warhead.SitePanel.blastDoor.isClosed)
+                            if (Plugin.isRunning)
                             {
-                                message = "Success! Started event!";
-                                success = true;
-                                EventHandler.StartEvent();
+                                message = "Event is already running, stop the event or wait until it ends!";
+                                success = false;
                             }
                             else
                             {
-                                message = "Unable to start event if blast doors are closed! Restart round and try again!";
-                                success = false;
+                                if (!Exiled.API.Features.Warhead.SitePanel.blastDoor.isClosed)
+                                {
+                                    message = "Success! Started event!";
+                                    success = true;
+                                    EventHandler.StartEvent();
+                                }
+                                else
+                                {
+                                    message = "Unable to start event if blast doors are closed! Restart round and try again!";
+                                    success = false;
+                                }
                             }
+                        }
+                        else
+                        {
+                            message = "Please, start the round before starting event!";
+                            success = false;
                         }
                         break;
                     case "stage":
-                        message = "Event is not running!";
+                        message = "Setting stage is no longer supported, due to stage change breaking game controller coroutine!";
                         success = false;
-                        if (Plugin.isRunning)
-                        {
-                            if (arguments.Array.Length == 3)
-                            {
-                                Plugin.stage = int.Parse(arguments.Array[2]);
-                                message = "Can't resolve number in 2nd argument!";
-                                success = false;
-                            }
-                        }
                         break;
                     case "stop":
                         if (!Plugin.isRunning)
@@ -86,14 +81,15 @@ namespace FunnyGuns.Commands
                         }
                         break;
                     default:
-                        message = "fg_event start - Starts event, controlled by plugin itself\nfg_event stop - Stops event.\nfg_event help - This command.";
-                        success = true;
+                        message = "Unknown subcommand! Check syntax and try again!\n\nSubcommands:\nfg_event start - Starts event, controlled by plugin itself\nfg_event stop - Stops event.\n";
+                        success = false;
                         break;
                 }
             }
             else
             {
-                message = "Insufficent Permissions. Required: fg.event. Contact owner or local system administator if you beleive this is a mistake!";
+                message = "Insufficent Permissions. Required: fg.event. Contact owner or local system administator if you beleive this is a mistake!\n\nIf you are an owner/local system administator, edit permissions.yml in Exiled config folder to grant permission to a certain group, " +
+                    "then type reload all in RA to apply permission changes!";
                 success = false;
             }
             response = message;

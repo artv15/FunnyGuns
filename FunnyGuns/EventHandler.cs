@@ -60,7 +60,6 @@ namespace FunnyGuns
             Timing.RunCoroutine(playerHealing());
             Plugin.active_playerlist = Exiled.API.Features.Player.List;
             Plugin.recalculatePlayers();
-            Log.Debug($"Amount of people in active_playerlist: {Plugin.CountList}");
             PlayerSpawn();
             Timing.RunCoroutine(GameController(), "eventcontrol");
             Plugin.stage = 1;
@@ -68,14 +67,16 @@ namespace FunnyGuns
 
         public static void StopEvent()
         {
+            Plugin.isMTFBigger = false;
             Plugin.isRunning = false;
             Plugin.recalculatePlayers();
-            Log.Debug($"Amount of people in active_playerlist: {Plugin.CountList}");
             Plugin.stage = 1;
             Plugin.secondsTillNextStage = 300;
             Timing.KillCoroutines("eventcontrol");
             Timing.KillCoroutines("gamePrep");
+            Timing.KillCoroutines("respawnci");
             Mutators.usedMutators.Clear();
+            Mutators.fastRun = false;
             Mutators.DisableWH();
             Mutators.areShotsMoreDeadly = false;
             Mutators.areLightsDown = false;
@@ -84,9 +85,23 @@ namespace FunnyGuns
             Mutators.noRegen = false;
         }
 
-        public static void PlayerFuckingDied(DiedEventArgs ev)
+        public static void PlayerFuckingDied(ChangingRoleEventArgs ev)
         {
-            Cassie.Message($"Unit {ev.Target.Id} terminated", false, false);
+            if (ev.NewRole == RoleType.Spectator)
+            {
+                if (Plugin.isRunning)
+                {
+                    if (ev.Player.IsCHI || ev.Player.IsNTF)
+                    {
+                        Cassie.Message($"{(ev.Player.IsCHI ? "Chaos agent " : "MTFUnit")} {ev.Player.Id} terminated", false, false);
+                    }
+                }
+                if (Plugin.isMTFBigger && Plugin.isRunning)
+                {
+                    Plugin.isMTFBigger = false;
+                    Timing.RunCoroutine(RespawnCI(ev.Player), "respawnci");
+                }
+            }
         }
 
         static void PlayerSpawn()
@@ -107,6 +122,10 @@ namespace FunnyGuns
                 CIAmount = (playersINT - 1) / 2;
             }
             Log.Debug($"Spawning {MTFUnitAmout} MTFs, {CIAmount} CI's");
+            if (MTFUnitAmout > CIAmount)
+            {
+                Plugin.isMTFBigger = true;
+            }
             foreach (var pl in Plugin.active_playerlist)
             {
                 Log.Debug($"Spawning {pl.Nickname}!");
@@ -170,9 +189,21 @@ namespace FunnyGuns
                                     pl.AddItem(ItemType.KeycardChaosInsurgency);
                                     pl.AddItem(ItemType.GunRevolver);
                                     pl.AddItem(ItemType.GunAK); //Return to here plz
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
+                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
+                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
+                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
+                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
                                     break;
                                 case 2:
                                     pl.Role = RoleType.ChaosMarauder;
+                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
+                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
+                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
+                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
+                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
                                     break;
                             }
                         }
@@ -183,12 +214,27 @@ namespace FunnyGuns
                             {
                                 case 1:
                                     pl.Role = RoleType.NtfPrivate;
+                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
+                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
+                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
+                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
+                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
                                     break;
                                 case 2:
                                     pl.Role = RoleType.NtfSergeant;
+                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
+                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
+                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
+                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
+                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
                                     break;
                                 case 3:
                                     pl.Role = RoleType.NtfCaptain;
+                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
+                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
+                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
+                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
+                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
                                     break;
                             }
                         }
@@ -202,15 +248,45 @@ namespace FunnyGuns
             }
         }
 
+        public static void droppingAmmo (DroppingAmmoEventArgs ev)
+        {
+            if (Plugin.isRunning || Plugin.isPrep)
+            {
+                ev.IsAllowed = false;
+            }
+        }
+
         static IEnumerator<float> gameStartingNotification(Player pl)
         {
-            int i = 45;
+            int i = 55;
             while (i > 0)
             {
                 pl.ShowHint($"\n\n\n\n\n\nФаза подготовки, <color=blue>идите в комплекс</color> или <color=red>готовьтесь обороняться</color>!\n<color=green>Урон во время фазы подготовки отключён.</color>\nОсталось <color=yellow>{i}</color> секунд.\n<color=yellow>Чтобы узнать об ивенте, напишите в консоли .fg_event_info</color>");
                 i -= 1;
                 yield return Timing.WaitForSeconds(1f);
             }
+        }
+
+        public static void reloading(ReloadingWeaponEventArgs ev)
+        {
+
+        }
+
+        static IEnumerator<float> RespawnCI(Player pl)
+        {
+            int i = 30;
+            while (i > 0)
+            {
+                i--;
+                var bc = new Exiled.API.Features.Broadcast();
+                bc.Duration = 1;
+                bc.Content = $"Вы возродитесь через <color=green>{i}</color> секунд, так как моговцев было заспавнено больше,\nчем хаоса!";
+                bc.Show = true;
+                bc.Type = Broadcast.BroadcastFlags.Normal;
+                pl.Broadcast(bc);
+                yield return Timing.WaitForSeconds(1f);
+            }
+            pl.Role = RoleType.ChaosRepressor;
         }
 
         static IEnumerator<float> GameController()
@@ -228,8 +304,8 @@ namespace FunnyGuns
             {
                 Timing.RunCoroutine(gameStartingNotification(pl), "gamePrep");
             }
-            yield return Timing.WaitForSeconds(45f);
-            Cassie.Message(".g4 .g4 .g4 . . .g4 .g4 .g4 . . .g4 .g4 .g4", false, false);
+            yield return Timing.WaitForSeconds(55f);
+            Cassie.Message(".g4 .g4 .g4 . . .g4 .g4 .g4", false, false);
             foreach (var door in Map.Doors)
             {
                 if (door.Nametag == "SURFACE_GATE")
@@ -294,13 +370,31 @@ namespace FunnyGuns
                             case 3:
                                 color = "red";
                                 break;
+                            case 4:
+                                color = "red";
+                                break;
+                            default:
+                                color = "green";
+                                break;
                         }
                         foreach (var pl in Player.List) 
                         {
-                            string msg = $"\n\n\n\n\n\nТекущая стадия: {Plugin.stage}. Время до следующей стадии: {Plugin.secondsTillNextStage}";
+                            string msg = $"\n\n\n\n\n\nТекущая стадия: <color={color}>{Plugin.stage}</color>. Время до следующей стадии: <color=orange>{Plugin.secondsTillNextStage}</color>";
                             if (Mutators.areLightsDown || Mutators.noRegen || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.legalWH)
                             {
                                 msg += "\nАктивные мутаторы: ";
+                            }
+                            if (Mutators.fastRun)
+                            {
+                                msg += $"<color=blue>Скорость передвижения увеличена!</color>";
+                                if (Mutators.areLightsDown || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.noRegen || Mutators.legalWH)
+                                {
+                                    msg += ", ";
+                                }
+                                else
+                                {
+                                    msg += ".";
+                                }
                             }
                             if (Mutators.areLightsDown)
                             {
@@ -368,7 +462,7 @@ namespace FunnyGuns
                             {
                                 if (Mutators.usedMutators.Contains(randomMutator))
                                 {
-                                    randomMutator = UnityEngine.Random.Range(1, 6);
+                                    randomMutator = UnityEngine.Random.Range(1, 7);
                                 }
                                 else
                                 {
@@ -394,11 +488,13 @@ namespace FunnyGuns
                                 case 5:
                                     Mutators.EnableWH();
                                     break;
+                                case 6:
+                                    Mutators.runFastOn();
+                                    break;
                                 default:
-                                    Log.Error("Random Mutator selector chose out of range");
+                                    Log.Error("Random Mutator selector chose out of range.");
                                     break;
                             }
-                            Cassie.Message(".g4 .g4 .g4", false, false);
                             Cassie.Message(".g4 .g4 .g4", false, false);
                             Mutators.usedMutators.Add(randomMutator);
                         }
@@ -406,21 +502,23 @@ namespace FunnyGuns
                         {
                             foreach (var pl in Player.List)
                             {
-                                pl.ShowHint($"Внимание! 3 Стадия! Запущена ядерная боеголовка!", 10);
+                                pl.ShowHint($"Внимание! 4 Стадия! Запущена ядерная боеголовка!", 10);
                             }
                             Mutators.areShotsMoreDeadly = false;
                             Mutators.areLightsDown = false;
                             Map.TurnOffAllLights(0f);
                             Mutators.isFallDamageFatal = false;
                             Mutators.noRegen = false;
+                            Mutators.runFastOff();
                             Mutators.DisableWH();
+                            Mutators.usedMutators.Clear();
                             Exiled.API.Features.Warhead.Start();
                             Exiled.API.Features.Warhead.IsLocked = true;
                             while (Warhead.DetonationTimer > 0f)
                             {
                                 foreach (var pl in Player.List)
                                 {
-                                    pl.ShowHint($"\n\n\n\n\n\nАктивна <color=red>ядерная боеголовка</color>. До детонации {(int)Warhead.DetonationTimer} секунд!", 2);
+                                    pl.ShowHint($"\n\n\n\n\n\nАктивна <color=red>ядерная боеголовка</color>. До детонации {(int)Warhead.DetonationTimer} секунд!", 1);
                                     yield return Timing.WaitForSeconds(0.5f);
                                 }
                             }
@@ -448,7 +546,7 @@ namespace FunnyGuns
                                     {
                                         if (pl.Role != RoleType.Spectator)
                                         {
-                                            pl.ShowHint("Уничтожте всех");
+                                            pl.ShowHint($"Уничтожьте <color=red>вражескую команду</color>.\nОсталось {(pl.IsNTF ? $"<color=green>{CI} хаосит(ов)</color>" : $"<color=blue>{MTF} NTF</color>")}");
                                         }
                                     }
                                 }
@@ -480,20 +578,17 @@ namespace FunnyGuns
                     if (ev.Amount <= 20)
                     {
                         ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 5f, false);
-                        Log.Debug("Damage under or euqal 20 received!");
                     }
                     else if (ev.Amount <= 50)
                     {
                         ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 7f, false);
                         ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 4f, false);
-                        Log.Debug("Damage under or euqal 50 received!");
                     }
                     else if (ev.Amount > 50)
                     {
                         ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 8f, false);
                         ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 7f, false);
                         ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Amnesia, 9f, false);
-                        Log.Debug("Damage bigger 50 received!");
                     }
                 }
                 else if (ev.DamageType == DamageTypes.Falldown)
@@ -503,9 +598,12 @@ namespace FunnyGuns
                         ev.Target.Kill(DamageTypes.Falldown);
                     }
                 }
-                else
+                else if (ev.DamageType == DamageTypes.Scp207)
                 {
-                    Log.Debug($"Player was damaged, but not by weapon. {(Plugin.isOverriden ? "Override is on" : "Override is off")}");
+                    if (Mutators.fastRun)
+                    {
+                        ev.IsAllowed = false;
+                    }
                 }
             }
             else if (Plugin.isRunning && Plugin.isPrep)
@@ -519,7 +617,7 @@ namespace FunnyGuns
             while (Round.IsStarted && Plugin.isRunning)
             {
                 yield return Timing.WaitForSeconds(0.75f);
-                foreach (var pl in Plugin.playerlist)
+                foreach (var pl in Plugin.active_playerlist)
                 {
                     if ((pl.Health < pl.MaxHealth && pl.Role != RoleType.Spectator) && !Mutators.noRegen)
                     {
@@ -534,27 +632,21 @@ namespace FunnyGuns
 
         }
 
+        public static void OnItemUsed(UsedItemEventArgs ev)
+        {
+            if (ev.Item.Type == ItemType.SCP500 && Mutators.fastRun)
+            {
+                Timing.CallDelayed(1f, () => ev.Player.EnableEffect(Exiled.API.Enums.EffectType.Scp207));
+            }
+        }
+
         public static void OnWaitingForPlayers()
         {
-            Log.Debug("Playerlist cleared!");
-            Plugin.playerlist.Clear();
             Mutators.usedMutators.Clear();
             Plugin.isRunning = false;
             Plugin.isOverriden = false;
             Plugin.isPlayerOverriden = false;
             StopEvent();
-        }
-
-        public static void PlayerJoined(JoinedEventArgs ev)
-        {
-            Plugin.playerlist.Add(ev.Player);
-            Log.Debug("Added player to playerlist!");
-        }
-
-        public static void PlayerLeft(LeftEventArgs ev)
-        {
-            Plugin.playerlist.Remove(ev.Player);
-            Log.Debug("Removed player from playerlist!");
         }
     }
 }
