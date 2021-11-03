@@ -313,7 +313,7 @@ namespace FunnyGuns
             int i = 55;
             while (i > 0)
             {
-                pl.ShowHint($"\n\n\n\n\n\nФаза подготовки, <color=blue>идите в комплекс</color> или <color=red>готовьтесь обороняться</color>!\n<color=green>Урон во время фазы подготовки отключён.</color>\nОсталось <color=yellow>{i}</color> секунд.\n<color=yellow>Чтобы узнать об ивенте, напишите в консоли .fg_event_info</color>");
+                pl.ShowHint($"\n\n\n\n\n\nФаза подготовки, <color=blue>идите в комплекс</color> или <color=red>готовьтесь обороняться</color>!\n<color=green>Урон во время фазы подготовки отключён.</color>\nОсталось <color=yellow>{i}</color> секунд.\n<color=yellow>.fg_event_info - инфа об ивенте  .fg_updates - обновления</color>");
                 i -= 1;
                 yield return Timing.WaitForSeconds(1f);
             }
