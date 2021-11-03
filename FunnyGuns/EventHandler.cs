@@ -71,6 +71,7 @@ namespace FunnyGuns
             Plugin.recalculatePlayers();
             Plugin.stage = 1;
             Plugin.secondsTillNextStage = 300;
+            Plugin.allowRespawningWithRA = false;
             Timing.KillCoroutines("eventcontrol");
             Timing.KillCoroutines("gamePrep");
             Timing.KillCoroutines("respawnci");
