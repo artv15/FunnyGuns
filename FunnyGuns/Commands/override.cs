@@ -33,8 +33,20 @@ namespace FunnyGuns.Commands
             {
                 switch (firstarg)
                 {
+                    case "respawnra":
+                        if (!Plugin.allowRespawningWithRA)
+                        {
+                            Plugin.allowRespawningWithRA = true;
+                            response = "From now on, respawning as NTF or CI will not be denied! If you are reading it, you are pesky bastard!";
+                            return true;
+                        }
+                        else
+                        {
+                            response = "Already overriden!";
+                            return false;
+                        }
+                        break;
                     case "damage":
-
                         try
                         {
                             if (!Plugin.isOverriden)
@@ -66,6 +78,30 @@ namespace FunnyGuns.Commands
                         {
                             response = "Already overriden!";
                             return false;
+                        }
+                        break;
+                    case "mutator":
+                        string secondarg;
+                        try
+                        {
+                            secondarg = arguments.Array[2].ToLower();
+                        }
+                        catch (Exception)
+                        {
+                            secondarg = "error";
+                        }
+                        if (secondarg == "error")
+                        {
+                            response = "Required mutator id!";
+                            return false;
+                        } 
+                        else
+                        {
+                            response = "Tried to override";
+                            Plugin.MutatorOverride = int.Parse(secondarg);
+                            var msg = "<color=green>Админ</color> выставил <color=blue>определённое значение</color> для следующего мутатора! <color=red>Следующий мутатор предопределён</color>!";
+                            Exiled.API.Features.Map.Broadcast(10, msg);
+                            return true;
                         }
                         break;
                     default:

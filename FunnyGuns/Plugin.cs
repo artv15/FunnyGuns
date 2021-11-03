@@ -16,6 +16,9 @@ namespace FunnyGuns
         public static System.Collections.Generic.IEnumerable<Exiled.API.Features.Player> active_playerlist = new List<Exiled.API.Features.Player>();
         public static int CountList;
         public static bool isMTFBigger = false;
+        public static int MutatorOverride = 0;
+        public static bool allowRespawningWithRA;
+        public static int overrideHisRespawn;
 
         public static bool isPrep = true;
         public static bool isRunning = false;
@@ -40,19 +43,19 @@ namespace FunnyGuns
         {
             Log.Info("╔══════════════════════════════════════════════╗");
             Log.Info("║               FunnyGuns Event                ║");
-            Log.Info("║                   (BETA)                     ║");
+            Log.Info("║                (Pre-Release)                 ║");
             Log.Info("║ Made by Treeshold#0001 (aka. Star Butterfly) ║");
-            Log.Info("║    Beta Build Identifier(BBI): 000005x000    ║");
+            Log.Info("║    Beta Build Identifier(BBI): 000007x001    ║");
             Log.Info("║  if you want to send feedback, include BBI!  ║");
             Log.Info("╚══════════════════════════════════════════════╝");
             Log.Warn("Warning! Beta! Some things may or may not work!");
 
-            Player.DroppingAmmo += lh.droppingAmmo;
             Server.RoundStarted += lh.OnRoundStarted;
             Server.WaitingForPlayers += lh.OnWaitingForPlayers;
             Player.Hurting += lh.OnHurt;
             Player.ChangingRole += lh.PlayerFuckingDied;
-            Player.ReloadingWeapon += lh.reloading;
+            Player.ReloadingWeapon += lh.onReload;
+            Player.DroppingAmmo += lh.onAmmoDrop;
             Player.ActivatingWarheadPanel += lh.UnlockingWarheadButton;
             Server.RespawningTeam += lh.respawn;
             Exiled.Events.Handlers.Map.Decontaminating += lh.Decont;
@@ -60,12 +63,12 @@ namespace FunnyGuns
 
         public override void OnDisabled()
         {
-            Player.DroppingAmmo -= lh.droppingAmmo;
             Server.RoundStarted -= lh.OnRoundStarted;
             Server.WaitingForPlayers -= lh.OnWaitingForPlayers;
             Player.Hurting -= lh.OnHurt;
             Player.ChangingRole -= lh.PlayerFuckingDied;
-            Player.ReloadingWeapon -= lh.reloading;
+            Player.ReloadingWeapon -= lh.onReload;
+            Player.DroppingAmmo -= lh.onAmmoDrop;
             Server.RespawningTeam -= lh.respawn;
             Player.ActivatingWarheadPanel -= lh.UnlockingWarheadButton;
             Exiled.Events.Handlers.Map.Decontaminating -= lh.Decont;

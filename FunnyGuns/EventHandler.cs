@@ -1,6 +1,5 @@
 ﻿using Exiled.API.Features;
 using Exiled.Events.EventArgs;
-using InventorySystem.Items;
 using MEC;
 using System;
 using System.Collections.Generic;
@@ -87,7 +86,7 @@ namespace FunnyGuns
 
         public static void PlayerFuckingDied(ChangingRoleEventArgs ev)
         {
-            if (ev.NewRole == RoleType.Spectator)
+            if (ev.NewRole == RoleType.Spectator && (ev.Player.IsCHI || ev.Player.IsNTF))
             {
                 if (Plugin.isRunning)
                 {
@@ -100,6 +99,17 @@ namespace FunnyGuns
                 {
                     Plugin.isMTFBigger = false;
                     Timing.RunCoroutine(RespawnCI(ev.Player), "respawnci");
+                }
+            }
+            else
+            {
+                if (ev.Player.Id != Plugin.overrideHisRespawn)
+                {
+                    if (ev.Player.Role != RoleType.None && ((((ev.NewRole != RoleType.Spectator || ev.NewRole != RoleType.Tutorial)) && !Plugin.allowRespawningWithRA) && !Plugin.isPrep) && Plugin.isRunning)
+                    {
+                        ev.IsAllowed = false;
+                        ev.Player.Broadcast(5, "<color=red>Не абузь</color> во время ивента! Всё должно быть честно!", Broadcast.BroadcastFlags.Normal, true);
+                    }
                 }
             }
         }
@@ -141,14 +151,37 @@ namespace FunnyGuns
                             {
                                 case 1:
                                     pl.Role = RoleType.NtfPrivate;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
                                     pl.AddItem(ItemType.KeycardNTFCommander);
                                     break;
                                 case 2:
                                     pl.Role = RoleType.NtfSergeant;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
                                     pl.AddItem(ItemType.KeycardNTFCommander);
                                     break;
                                 case 3:
                                     pl.Role = RoleType.NtfCaptain;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
+                                    pl.AddItem(ItemType.KeycardNTFCommander);
                                     break;
                             }
                             MTFUnitAmout -= 1;
@@ -160,9 +193,25 @@ namespace FunnyGuns
                             {
                                 case 1:
                                     pl.Role = RoleType.ChaosRifleman;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
+                                    pl.AddItem(ItemType.KeycardChaosInsurgency);
                                     break;
                                 case 2:
                                     pl.Role = RoleType.ChaosMarauder;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
+                                    pl.AddItem(ItemType.KeycardChaosInsurgency);
                                     break;
                             }
                             CIAmount -= 1;
@@ -186,24 +235,25 @@ namespace FunnyGuns
                                 case 1:
                                     pl.Role = RoleType.ChaosRifleman;
                                     pl.ClearInventory();
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
                                     pl.AddItem(ItemType.KeycardChaosInsurgency);
-                                    pl.AddItem(ItemType.GunRevolver);
-                                    pl.AddItem(ItemType.GunAK); //Return to here plz
-                                    pl.AddItem(ItemType.Medkit);
-                                    pl.AddItem(ItemType.Medkit);
-                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
-                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
-                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
-                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
-                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
                                     break;
                                 case 2:
                                     pl.Role = RoleType.ChaosMarauder;
-                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
-                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
-                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
-                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
-                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
+                                    pl.AddItem(ItemType.KeycardChaosInsurgency);
                                     break;
                             }
                         }
@@ -214,27 +264,37 @@ namespace FunnyGuns
                             {
                                 case 1:
                                     pl.Role = RoleType.NtfPrivate;
-                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
-                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
-                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
-                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
-                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
+                                    pl.AddItem(ItemType.KeycardNTFCommander);
                                     break;
                                 case 2:
                                     pl.Role = RoleType.NtfSergeant;
-                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
-                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
-                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
-                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
-                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
+                                    pl.AddItem(ItemType.KeycardNTFCommander);
                                     break;
                                 case 3:
                                     pl.Role = RoleType.NtfCaptain;
-                                    pl.Ammo[ItemType.Ammo12gauge] = 6942;
-                                    pl.Ammo[ItemType.Ammo44cal] = 6942;
-                                    pl.Ammo[ItemType.Ammo556x45] = 6942;
-                                    pl.Ammo[ItemType.Ammo762x39] = 6942;
-                                    pl.Ammo[ItemType.Ammo9x19] = 6942;
+                                    pl.ClearInventory();
+                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GrenadeHE);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Medkit);
+                                    pl.AddItem(ItemType.Adrenaline);
+                                    pl.AddItem(ItemType.ArmorCombat);
+                                    pl.AddItem(ItemType.KeycardNTFCommander);
                                     break;
                             }
                         }
@@ -245,14 +305,6 @@ namespace FunnyGuns
                     }
                 }
 
-            }
-        }
-
-        public static void droppingAmmo (DroppingAmmoEventArgs ev)
-        {
-            if (Plugin.isRunning || Plugin.isPrep)
-            {
-                ev.IsAllowed = false;
             }
         }
 
@@ -267,14 +319,63 @@ namespace FunnyGuns
             }
         }
 
-        public static void reloading(ReloadingWeaponEventArgs ev)
+        public static void onReload(ReloadingWeaponEventArgs ev)
         {
+            if (Plugin.isRunning)
+            {
+                ev.IsAllowed = true;
+                var firearmType = ev.Firearm.Type;
+                ItemType ammoType;
+                switch (firearmType)
+                {
+                    case ItemType.GunCOM15:
+                        ammoType = ItemType.Ammo9x19;
+                        break;
+                    case ItemType.GunE11SR:
+                        ammoType = ItemType.Ammo556x45;
+                        break;
+                    case ItemType.GunCrossvec:
+                        ammoType = ItemType.Ammo9x19;
+                        break;
+                    case ItemType.GunFSP9:
+                        ammoType = ItemType.Ammo9x19;
+                        break;
+                    case ItemType.GunLogicer:
+                        ammoType = ItemType.Ammo762x39;
+                        break;
+                    case ItemType.GunCOM18:
+                        ammoType = ItemType.Ammo9x19;
+                        break;
+                    case ItemType.GunRevolver:
+                        ammoType = ItemType.Ammo44cal;
+                        break;
+                    case ItemType.GunAK:
+                        ammoType = ItemType.Ammo762x39;
+                        break;
+                    case ItemType.GunShotgun:
+                        ammoType = ItemType.Ammo12gauge;
+                        break;
+                    default:
+                        ammoType = ItemType.Ammo9x19;
+                        ev.Player.ShowHint("<color=red>Error occured while defining ammo type!</color>");
+                        break;
+                }
+                Timing.CallDelayed(1f, () => ev.Player.Ammo[ammoType] = (ushort)(ev.Firearm.MaxAmmo + 10));
+            }
+        }
 
+        public static void onAmmoDrop(DroppingAmmoEventArgs ev)
+        {
+            if (Plugin.isRunning)
+            {
+                ev.IsAllowed = false;
+            }
         }
 
         static IEnumerator<float> RespawnCI(Player pl)
         {
             int i = 30;
+            
             while (i > 0)
             {
                 i--;
@@ -284,9 +385,23 @@ namespace FunnyGuns
                 bc.Show = true;
                 bc.Type = Broadcast.BroadcastFlags.Normal;
                 pl.Broadcast(bc);
+                if (i == 1)
+                {
+                    Plugin.overrideHisRespawn = pl.Id;
+                }
                 yield return Timing.WaitForSeconds(1f);
             }
             pl.Role = RoleType.ChaosRepressor;
+            pl.ClearInventory();
+            pl.AddItem(ItemType.GunLogicer);
+            pl.AddItem(ItemType.GunAK);
+            pl.AddItem(ItemType.GrenadeHE);
+            pl.AddItem(ItemType.Medkit);
+            pl.AddItem(ItemType.Medkit);
+            pl.AddItem(ItemType.Adrenaline);
+            pl.AddItem(ItemType.ArmorCombat);
+            pl.AddItem(ItemType.KeycardChaosInsurgency);
+            Plugin.overrideHisRespawn = 0;
         }
 
         static IEnumerator<float> GameController()
@@ -318,7 +433,7 @@ namespace FunnyGuns
             int CI = 0;
             int lastStanding = 0;
             Plugin.stage = 1;
-            Plugin.secondsTillNextStage = 150;
+            Plugin.secondsTillNextStage = 60;
             while (true)
             {
                 foreach (var pl in Plugin.active_playerlist)
@@ -360,7 +475,8 @@ namespace FunnyGuns
                         yield return Timing.WaitForSeconds(1f);
                         //Status bar and mutators display here!
                         string color;
-                        switch (Plugin.stage) {
+                        switch (Plugin.stage)
+                        {
                             case 1:
                                 color = "green";
                                 break;
@@ -377,10 +493,10 @@ namespace FunnyGuns
                                 color = "green";
                                 break;
                         }
-                        foreach (var pl in Player.List) 
+                        foreach (var pl in Player.List)
                         {
                             string msg = $"\n\n\n\n\n\nТекущая стадия: <color={color}>{Plugin.stage}</color>. Время до следующей стадии: <color=orange>{Plugin.secondsTillNextStage}</color>";
-                            if (Mutators.areLightsDown || Mutators.noRegen || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.legalWH)
+                            if (Mutators.fastRun || Mutators.areLightsDown || Mutators.noRegen || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.legalWH)
                             {
                                 msg += "\nАктивные мутаторы: ";
                             }
@@ -457,7 +573,16 @@ namespace FunnyGuns
                         {
                             Plugin.secondsTillNextStage = 150;
                             Plugin.stage += 1;
-                            int randomMutator = UnityEngine.Random.Range(1, 6);
+                            int randomMutator;
+                            if (Plugin.MutatorOverride == 0)
+                            {
+                                randomMutator = UnityEngine.Random.Range(1, 6);
+                            }
+                            else
+                            {
+                                randomMutator = Plugin.MutatorOverride;
+                                Plugin.MutatorOverride = 0;
+                            }
                             while (true)
                             {
                                 if (Mutators.usedMutators.Contains(randomMutator))
@@ -469,8 +594,8 @@ namespace FunnyGuns
                                     break;
                                 }
                             }
-                            
-                            
+
+
                             switch (randomMutator)
                             {
                                 case 1:
@@ -524,7 +649,7 @@ namespace FunnyGuns
                             }
                             while (true)
                             {
-                                foreach (var pl in Plugin.active_playerlist)
+                                foreach (var pl in Player.List)
                                 {
                                     Plugin.recalculatePlayers();
                                     if (pl.IsNTF)
@@ -573,29 +698,55 @@ namespace FunnyGuns
                 {
                     if (Mutators.areShotsMoreDeadly)
                     {
-                        ev.Amount = (int)(ev.Amount * 1.5f);
+                        ev.Amount = (int)(ev.Amount * 3.5f);
+                        if (ev.Amount <= 20)
+                        {
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 5f, false);
+                        }
+                        else if (ev.Amount <= 50)
+                        {
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 7f, false);
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 4f, false);
+                        }
+                        else if (ev.Amount > 50)
+                        {
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 8f, false);
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 7f, false);
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Amnesia, 9f, false);
+                        }
                     }
-                    if (ev.Amount <= 20)
+                    else
                     {
-                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 5f, false);
-                    }
-                    else if (ev.Amount <= 50)
-                    {
-                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 7f, false);
-                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 4f, false);
-                    }
-                    else if (ev.Amount > 50)
-                    {
-                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 8f, false);
-                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 7f, false);
-                        ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Amnesia, 9f, false);
+                        if (Plugin.stage == 1)
+                        {
+                            ev.Amount /= 2;
+                        }
+                        else if (Plugin.stage == 3)
+                        {
+                            ev.Amount *= 2;
+                        }
+                        if (ev.Amount <= 20)
+                        {
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 5f, false);
+                        }
+                        else if (ev.Amount <= 50)
+                        {
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 7f, false);
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 4f, false);
+                        }
+                        else if (ev.Amount > 50)
+                        {
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Concussed, 8f, false);
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.SinkHole, 7f, false);
+                            ev.Target.EnableEffect(Exiled.API.Enums.EffectType.Amnesia, 9f, false);
+                        }
                     }
                 }
                 else if (ev.DamageType == DamageTypes.Falldown)
                 {
                     if (Mutators.isFallDamageFatal)
                     {
-                        ev.Target.Kill(DamageTypes.Falldown);
+                        ev.Amount = 690420;
                     }
                 }
                 else if (ev.DamageType == DamageTypes.Scp207)
