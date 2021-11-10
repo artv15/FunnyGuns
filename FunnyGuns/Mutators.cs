@@ -15,12 +15,28 @@ namespace FunnyGuns
         This is the most unefficent way of storing mutators' functions and booleans.
         *Clap clap moment intensifies*
         */
+
+        /*
+        I need to create some sort of `Temporary` mutators. They should REALLY change the game rules
+        and I mean REALLLY change them. You probably do know what I am talking about.
+
+        Some Ideas:
+        1) Broken cassie - Deafen for 45 seconds.
+        -) Door control system failure - hello old friend, hello Fall of The Facility! ~~ NO LONGER TEMPORARY ~~
+        3) get more ideas!
+        */
         public static bool areLightsDown;
         public static bool noRegen;
         public static bool areShotsMoreDeadly;
         public static bool isFallDamageFatal;
         public static bool legalWH;
         public static bool fastRun;
+        public static bool doorJam;
+
+        public static void disableMutators()
+        {
+            doorJam = false;
+        }
 
         public static List<int> usedMutators = new List<int>();
 
@@ -52,6 +68,11 @@ namespace FunnyGuns
             }
         }
 
+        public static void jamDoors()
+        {
+            doorJam = true;
+        }
+
         public static void RegenOff()
         {
             noRegen = true;
@@ -78,6 +99,7 @@ namespace FunnyGuns
                 }
             }
         }
+
         public static void DisableWH()
         {
             legalWH = false;

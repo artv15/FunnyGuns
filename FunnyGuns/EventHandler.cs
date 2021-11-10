@@ -49,14 +49,16 @@ namespace FunnyGuns
 
         public static void StartEvent()
         {
+            Plugin.shopDict.Clear();
             Mutators.areShotsMoreDeadly = false;
             Mutators.areLightsDown = false;
             Map.TurnOffAllLights(0f);
             Mutators.isFallDamageFatal = false;
             Mutators.noRegen = false;
+            Mutators.disableMutators();
             Mutators.DisableWH();
             Plugin.isRunning = true;
-            Timing.RunCoroutine(playerHealing());
+            Timing.RunCoroutine(playerHealing(), "heal");
             Plugin.active_playerlist = Exiled.API.Features.Player.List;
             Plugin.recalculatePlayers();
             PlayerSpawn();
@@ -66,6 +68,7 @@ namespace FunnyGuns
 
         public static void StopEvent()
         {
+            Plugin.shopDict.Clear();
             Plugin.isMTFBigger = false;
             Plugin.isRunning = false;
             Plugin.recalculatePlayers();
@@ -76,6 +79,7 @@ namespace FunnyGuns
             Timing.KillCoroutines("gamePrep");
             Timing.KillCoroutines("respawnci");
             Mutators.usedMutators.Clear();
+            Mutators.disableMutators();
             Mutators.fastRun = false;
             Mutators.DisableWH();
             Mutators.areShotsMoreDeadly = false;
@@ -104,30 +108,32 @@ namespace FunnyGuns
             }
             else
             {
-                if (ev.Player.Id != Plugin.overrideHisRespawn)
+                if (Plugin.isRunning && !Plugin.allowRespawningWithRA && !(ev.NewRole == RoleType.Spectator) && !(Plugin.overrideHisRespawn == ev.Player.Id))
                 {
-                    if (ev.Player.Role != RoleType.None && ((((ev.NewRole != RoleType.Spectator || ev.NewRole != RoleType.Tutorial)) && !Plugin.allowRespawningWithRA) && !Plugin.isPrep) && Plugin.isRunning)
-                    {
-                        ev.IsAllowed = false;
-                        ev.Player.Broadcast(5, "<color=red>Не абузь</color> во время ивента! Всё должно быть честно!", Broadcast.BroadcastFlags.Normal, true);
-                    }
+                    ev.IsAllowed = false;
+                    ev.Player.Broadcast(5, "Админ пытался сменить твой класс. Мы, конечно, не дали такому случится, ведь это <color=red>абуз</color>!", Broadcast.BroadcastFlags.Normal, true);
+                    Log.Warn("Abuse attempt detected! But maybe it's false positive!");
                 }
             }
         }
 
         static void PlayerSpawn()
         {
-            Log.Debug("Called Player spawn!");
-            Plugin.recalculatePlayers();
-            int playersINT = Plugin.CountList;
-            int MTFUnitAmout;
+            /*
+            Gonna comment almost everything, because testing required!
+            */
+            Log.Debug("Called Player spawn and enabled spawn override!");
+            Plugin.allowRespawningWithRA = true; //Giving plugin ability to override spawn coroutine
+            Plugin.recalculatePlayers(); //used for determining how many players are going to be spawned!
+            int playersINT = Plugin.CountList; 
+            int MTFUnitAmout; 
             int CIAmount;
-            if (playersINT % 2 == 0)
+            if (playersINT % 2 == 0) //Equal spawn
             {
                 MTFUnitAmout = playersINT / 2;
                 CIAmount = playersINT / 2;
             }
-            else
+            else //UnEqual spawn
             {
                 MTFUnitAmout = (playersINT + 1) / 2;
                 CIAmount = (playersINT - 1) / 2;
@@ -135,26 +141,26 @@ namespace FunnyGuns
             Log.Debug($"Spawning {MTFUnitAmout} MTFs, {CIAmount} CI's");
             if (MTFUnitAmout > CIAmount)
             {
-                Plugin.isMTFBigger = true;
+                Plugin.isMTFBigger = true; //Used for "fair CI" respawn
             }
             foreach (var pl in Plugin.active_playerlist)
             {
-                Log.Debug($"Spawning {pl.Nickname}!");
-                if (MTFUnitAmout != 0 && CIAmount != 0)
+                
+                if (MTFUnitAmout != 0 && CIAmount != 0) //Still could randomly spawn!
                 {
                     try
                     {
-                        int randint = UnityEngine.Random.Range(1, 3);
-                        if (randint == 1)
+                        int randint = UnityEngine.Random.Range(1, 3); //Select CI or MTF!
+                        Log.Debug($"Spawning `{pl.Nickname} ({pl.UserId})` as {(randint == 1 ? "MTF" : "CI" )}!"); //Test it plz
+                        if (randint == 1) //MTF
                         {
-                            int roleSel = UnityEngine.Random.Range(1, 4);
-                            switch (roleSel)
+                            int roleSel = UnityEngine.Random.Range(1, 4); 
+                            switch (roleSel) //MTF Subclasses
                             {
                                 case 1:
                                     pl.Role = RoleType.NtfPrivate;
                                     pl.ClearInventory();
-                                    pl.AddItem(ItemType.GunLogicer);
-                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GunE11SR);
                                     pl.AddItem(ItemType.GrenadeHE);
                                     pl.AddItem(ItemType.Medkit);
                                     pl.AddItem(ItemType.Medkit);
@@ -165,7 +171,7 @@ namespace FunnyGuns
                                 case 2:
                                     pl.Role = RoleType.NtfSergeant;
                                     pl.ClearInventory();
-                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GunE11SR);
                                     pl.AddItem(ItemType.GrenadeHE);
                                     pl.AddItem(ItemType.Medkit);
                                     pl.AddItem(ItemType.Medkit);
@@ -176,7 +182,7 @@ namespace FunnyGuns
                                 case 3:
                                     pl.Role = RoleType.NtfCaptain;
                                     pl.ClearInventory();
-                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GunE11SR);
                                     pl.AddItem(ItemType.GrenadeHE);
                                     pl.AddItem(ItemType.Medkit);
                                     pl.AddItem(ItemType.Medkit);
@@ -187,10 +193,11 @@ namespace FunnyGuns
                             }
                             MTFUnitAmout -= 1;
                         }
-                        else
+                        else //CI
                         {
+                            Log.Debug($"Spawning `{pl.Nickname} ({pl.UserId})` as {(randint == 1 ? "MTF" : "CI")}!"); //Test it plz
                             int roleSel = UnityEngine.Random.Range(1, 3);
-                            switch (roleSel)
+                            switch (roleSel) //CI Subclasses
                             {
                                 case 1:
                                     pl.Role = RoleType.ChaosRifleman;
@@ -206,7 +213,7 @@ namespace FunnyGuns
                                 case 2:
                                     pl.Role = RoleType.ChaosMarauder;
                                     pl.ClearInventory();
-                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GunAK);
                                     pl.AddItem(ItemType.GrenadeHE);
                                     pl.AddItem(ItemType.Medkit);
                                     pl.AddItem(ItemType.Medkit);
@@ -219,23 +226,23 @@ namespace FunnyGuns
                         }
 
                     }
-                    catch (Exception ex)
+                    catch (Exception ex) //In case of error
                     {
-                        Log.Warn($"Couldn't spawn player with nickname {pl.Nickname}");
+                        Log.Warn($"Couldn't spawn player with nickname {pl.Nickname}! The player is either non-existant, or Plugin is broken. If you beleive, that this is an error, please contact Treeshold#0001. (and include BBI)");
                     }
                 }
-                else
+                else //One team has exausted their tickets!
                 {
                     try
                     {
-                        if (MTFUnitAmout == 0)
+                        if (MTFUnitAmout == 0) //If MTF ran out of tickets
                         {
-                            int roleSel = UnityEngine.Random.Range(1, 3);
+                            Log.Debug($"Spawning `{pl.Nickname} ({pl.UserId})` as CI!"); //Test it plz
+                            int roleSel = UnityEngine.Random.Range(1, 3); 
                             switch (roleSel)
                             {
                                 case 1:
                                     pl.Role = RoleType.ChaosRifleman;
-                                    pl.ClearInventory();
                                     pl.ClearInventory();
                                     pl.AddItem(ItemType.GunAK);
                                     pl.AddItem(ItemType.GrenadeHE);
@@ -248,7 +255,7 @@ namespace FunnyGuns
                                 case 2:
                                     pl.Role = RoleType.ChaosMarauder;
                                     pl.ClearInventory();
-                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GunAK);
                                     pl.AddItem(ItemType.GrenadeHE);
                                     pl.AddItem(ItemType.Medkit);
                                     pl.AddItem(ItemType.Medkit);
@@ -258,15 +265,16 @@ namespace FunnyGuns
                                     break;
                             }
                         }
-                        else
+                        else //If CI ran out of tickets
                         {
+                            Log.Debug($"Spawning `{pl.Nickname} ({pl.UserId})` as MTF!"); //Test it plz
                             int roleSel = UnityEngine.Random.Range(1, 4);
                             switch (roleSel)
                             {
                                 case 1:
                                     pl.Role = RoleType.NtfPrivate;
                                     pl.ClearInventory();
-                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GunE11SR);
                                     pl.AddItem(ItemType.GrenadeHE);
                                     pl.AddItem(ItemType.Medkit);
                                     pl.AddItem(ItemType.Medkit);
@@ -277,7 +285,7 @@ namespace FunnyGuns
                                 case 2:
                                     pl.Role = RoleType.NtfSergeant;
                                     pl.ClearInventory();
-                                    pl.AddItem(ItemType.GunLogicer);
+                                    pl.AddItem(ItemType.GunE11SR);
                                     pl.AddItem(ItemType.GrenadeHE);
                                     pl.AddItem(ItemType.Medkit);
                                     pl.AddItem(ItemType.Medkit);
@@ -288,8 +296,7 @@ namespace FunnyGuns
                                 case 3:
                                     pl.Role = RoleType.NtfCaptain;
                                     pl.ClearInventory();
-                                    pl.AddItem(ItemType.GunLogicer);
-                                    pl.AddItem(ItemType.GunAK);
+                                    pl.AddItem(ItemType.GunE11SR);
                                     pl.AddItem(ItemType.GrenadeHE);
                                     pl.AddItem(ItemType.Medkit);
                                     pl.AddItem(ItemType.Medkit);
@@ -300,12 +307,28 @@ namespace FunnyGuns
                             }
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception ex) //In case if we failed to spawn a player
                     {
-                        Log.Warn($"Couldn't spawn player with nickname {pl.Nickname}");
+                        Log.Warn($"Couldn't spawn player with nickname {pl.Nickname}! The player is either non-existant, or Plugin is broken. If you beleive, that this is an error, please contact Treeshold#0001. (and include BBI)");
                     }
                 }
+            }
+            Plugin.allowRespawningWithRA = false; //Disabling override
+        }
 
+        public static void KilledPlayer(DiedEventArgs ev)
+        {
+            var pl = ev.Killer;
+            if (!Plugin.shopDict.ContainsKey($"{pl.Nickname} ({pl.UserId})") && !Plugin.playerClientDict.ContainsKey($"{pl.Nickname} ({pl.UserId})"))
+            {
+                Plugin.shopDict.Add($"{pl.Nickname} ({pl.UserId})", 0);
+                Plugin.playerClientDict.Add($"{pl.Nickname} ({pl.UserId})", pl);
+            }
+            if (ev.Killer != ev.Target || Plugin.suicideisKill)
+            {
+                int currentBal = Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"];
+                Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"] = currentBal += 10;
+                pl.Broadcast(5, $"Вы получили <color=yellow>10</color> монет за убийтво <color=red>{ev.Target.Nickname}</color>.\nВаш баланс: <color=yellow>{Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"]}</color>", Broadcast.BroadcastFlags.Normal, true);
             }
         }
 
@@ -314,7 +337,7 @@ namespace FunnyGuns
             int i = 55;
             while (i > 0)
             {
-                pl.ShowHint($"\n\n\n\n\n\nФаза подготовки, <color=blue>идите в комплекс</color> или <color=red>готовьтесь обороняться</color>!\n<color=green>Урон во время фазы подготовки отключён.</color>\nОсталось <color=yellow>{i}</color> секунд.\n<color=yellow>.fg_event_info - инфа об ивенте  .fg_updates - обновления</color>");
+                pl.ShowHint($"\n\n\n\n\n\nФаза подготовки, <color=blue>идите в комплекс</color> или <color=red>готовьтесь обороняться</color>!\n<color=green>Урон во время фазы подготовки отключён.</color>\nОсталось <color=yellow>{i}</color> секунд.\n<color=yellow>.fg_event - инфа об ивенте  .fg_updates - обновления  .shop - магазин</color>");
                 i -= 1;
                 yield return Timing.WaitForSeconds(1f);
             }
@@ -324,10 +347,10 @@ namespace FunnyGuns
         {
             if (Plugin.isRunning)
             {
-                ev.IsAllowed = true;
-                var firearmType = ev.Firearm.Type;
+                ev.IsAllowed = true; //We will always try to reload!
+                var firearmType = ev.Firearm.Type; //Storing weapon ItemType
                 ItemType ammoType;
-                switch (firearmType)
+                switch (firearmType) //Funny switch
                 {
                     case ItemType.GunCOM15:
                         ammoType = ItemType.Ammo9x19;
@@ -361,7 +384,7 @@ namespace FunnyGuns
                         ev.Player.ShowHint("<color=red>Error occured while defining ammo type!</color>");
                         break;
                 }
-                Timing.CallDelayed(1f, () => ev.Player.Ammo[ammoType] = (ushort)(ev.Firearm.MaxAmmo + 10));
+                Timing.CallDelayed(0.5f, () => ev.Player.Ammo[ammoType] = (ushort)(ev.Firearm.MaxAmmo + 10)); //Setting player's ammo to (weapon_max_ammo + 10) as a failsafe delayed
             }
         }
 
@@ -369,31 +392,44 @@ namespace FunnyGuns
         {
             if (Plugin.isRunning)
             {
-                ev.IsAllowed = false;
+                ev.IsAllowed = false; //To prevent ammo spam!
             }
+        }
+
+        public static void ItemAdded(SpawningItemEventArgs ev)
+        {
+            //Nothing, ignore this one!
         }
 
         static IEnumerator<float> RespawnCI(Player pl)
         {
-            int i = 30;
-            
-            while (i > 0)
+            int i = 15; //Timer
+
+            while (i > 0) //Ticking down to 0
             {
-                i--;
-                var bc = new Exiled.API.Features.Broadcast();
-                bc.Duration = 1;
-                bc.Content = $"Вы возродитесь через <color=green>{i}</color> секунд, так как моговцев было заспавнено больше,\nчем хаоса!";
-                bc.Show = true;
-                bc.Type = Broadcast.BroadcastFlags.Normal;
+                i--; //Deincrement i
+                var bc = new Exiled.API.Features.Broadcast(); //Creating broadcast
+                bc.Duration = 1; //Duration 1 second <= Interval 1 second
+                bc.Content = $"Вы возродитесь через <color=green>{i}</color> секунд, так как моговцев было заспавнено больше,\nчем хаоса!"; //Text
+                bc.Show = true; //Show (show (show))
+                bc.Type = Broadcast.BroadcastFlags.Normal; //I dunno
                 pl.Broadcast(bc);
                 if (i == 1)
                 {
-                    Plugin.overrideHisRespawn = pl.Id;
+                    Plugin.overrideHisRespawn = pl.Id; //We need to override anti-abuse for him!
                 }
                 yield return Timing.WaitForSeconds(1f);
             }
             pl.Role = RoleType.ChaosRepressor;
             pl.ClearInventory();
+            if (Mutators.legalWH)
+            {
+                pl.EnableEffect(Exiled.API.Enums.EffectType.Visuals939, 1000000);
+            }
+            if (Mutators.fastRun)
+            {
+                pl.EnableEffect(Exiled.API.Enums.EffectType.Scp207, 1000000);
+            }
             pl.AddItem(ItemType.GunLogicer);
             pl.AddItem(ItemType.GunAK);
             pl.AddItem(ItemType.GrenadeHE);
@@ -405,7 +441,7 @@ namespace FunnyGuns
             Plugin.overrideHisRespawn = 0;
         }
 
-        static IEnumerator<float> GameController()
+        static IEnumerator<float> GameController() //Main coroutine
         {
             Plugin.isPrep = true;
             foreach (var door in Map.Doors)
@@ -468,10 +504,32 @@ namespace FunnyGuns
                 }
                 else
                 {
-                    MTF = 0;
-                    CI = 0;
-                    if (Plugin.secondsTillNextStage >= 1 && Plugin.stage != 4)
+                    
+                    if (Plugin.secondsTillNextStage >= 1 && Plugin.stage != 5)
                     {
+                        MTF = 0;
+                        CI = 0;
+                        foreach (var pl in Player.List)
+                        {
+                            if (pl.IsCHI)
+                            {
+                                CI += 1;
+                            }
+                            else if (pl.IsNTF)
+                            {
+                                MTF += 1;
+                            }
+                        }
+                        if (!Plugin.isPlayerOverriden)
+                        {
+                            if (CI == 0 || MTF == 0)
+                            {
+                                Cassie.Message($"All {(CI == 0 ? "Chaos Agents" : "MTFUnits")} have been terminated");
+                                Log.Debug($"Event ended, Results: CI = {CI}; MTF = {MTF}");
+                                Log.Debug($"If any errors occured, contact Treeshold#0001 for assistance! Include BBI: {Plugin.BBI}");
+                                StopEvent();
+                            }
+                        }
                         Plugin.secondsTillNextStage -= 1;
                         yield return Timing.WaitForSeconds(1f);
                         //Status bar and mutators display here!
@@ -490,6 +548,9 @@ namespace FunnyGuns
                             case 4:
                                 color = "red";
                                 break;
+                            case 5:
+                                color = "black";
+                                break;
                             default:
                                 color = "green";
                                 break;
@@ -497,9 +558,21 @@ namespace FunnyGuns
                         foreach (var pl in Player.List)
                         {
                             string msg = $"\n\n\n\n\n\nТекущая стадия: <color={color}>{Plugin.stage}</color>. Время до следующей стадии: <color=orange>{Plugin.secondsTillNextStage}</color>";
-                            if (Mutators.fastRun || Mutators.areLightsDown || Mutators.noRegen || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.legalWH)
+                            if (Mutators.doorJam || Mutators.fastRun || Mutators.areLightsDown || Mutators.noRegen || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.legalWH)
                             {
                                 msg += "\nАктивные мутаторы: ";
+                            }
+                            if (Mutators.doorJam)
+                            {
+                                msg += $"<color=orange>Двери заклинило</color>";
+                                if (Mutators.fastRun || Mutators.areLightsDown || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.noRegen || Mutators.legalWH)
+                                {
+                                    msg += ", ";
+                                }
+                                else
+                                {
+                                    msg += ".";
+                                }
                             }
                             if (Mutators.fastRun)
                             {
@@ -527,7 +600,7 @@ namespace FunnyGuns
                             }
                             if (Mutators.areShotsMoreDeadly)
                             {
-                                msg += $"<color=red>Урон от оружий усилен!</color>";
+                                msg += $"<color=red>Урон от оружий усилен! (3.5X)</color>";
                                 if (Mutators.isFallDamageFatal || Mutators.noRegen || Mutators.legalWH)
                                 {
                                     msg += ", ";
@@ -570,14 +643,14 @@ namespace FunnyGuns
                     }
                     else
                     {
-                        if (Plugin.stage <= 2)
+                        if (Plugin.stage <= 3)
                         {
-                            Plugin.secondsTillNextStage = 150;
+                            Plugin.secondsTillNextStage = 90;
                             Plugin.stage += 1;
                             int randomMutator;
                             if (Plugin.MutatorOverride == 0)
                             {
-                                randomMutator = UnityEngine.Random.Range(1, 6);
+                                randomMutator = UnityEngine.Random.Range(1, 8);
                             }
                             else
                             {
@@ -588,7 +661,7 @@ namespace FunnyGuns
                             {
                                 if (Mutators.usedMutators.Contains(randomMutator))
                                 {
-                                    randomMutator = UnityEngine.Random.Range(1, 7);
+                                    randomMutator = UnityEngine.Random.Range(1, 8);
                                 }
                                 else
                                 {
@@ -617,19 +690,23 @@ namespace FunnyGuns
                                 case 6:
                                     Mutators.runFastOn();
                                     break;
+                                case 7:
+                                    Mutators.jamDoors();
+                                    break;
                                 default:
-                                    Log.Error("Random Mutator selector chose out of range.");
+                                    Log.Error("Random Mutator selector chose out of range. Either admin setted mutator out of range or RNG is broken. Check RA logs for command fg_override mutator [ID] before reporting the issue!");
                                     break;
                             }
-                            Cassie.Message(".g4 .g4 .g4", false, false);
-                            Mutators.usedMutators.Add(randomMutator);
+                            Cassie.Message(".g4 .g4 .g4", false, false); //some signal of stage changing, i guess...
+                            Mutators.usedMutators.Add(randomMutator); //Adding to NOT use the same mutator
                         }
                         else
                         {
                             foreach (var pl in Player.List)
                             {
-                                pl.ShowHint($"Внимание! 4 Стадия! Запущена ядерная боеголовка!", 10);
+
                             }
+                            Mutators.disableMutators();
                             Mutators.areShotsMoreDeadly = false;
                             Mutators.areLightsDown = false;
                             Map.TurnOffAllLights(0f);
@@ -638,21 +715,23 @@ namespace FunnyGuns
                             Mutators.runFastOff();
                             Mutators.DisableWH();
                             Mutators.usedMutators.Clear();
-                            Exiled.API.Features.Warhead.Start();
-                            Exiled.API.Features.Warhead.IsLocked = true;
-                            while (Warhead.DetonationTimer > 0f)
+                            foreach (var pl in Player.List)
                             {
-                                foreach (var pl in Player.List)
+                                if (pl.Role != RoleType.Spectator)
                                 {
-                                    pl.ShowHint($"\n\n\n\n\n\nАктивна <color=red>ядерная боеголовка</color>. До детонации {(int)Warhead.DetonationTimer} секунд!", 1);
-                                    yield return Timing.WaitForSeconds(0.5f);
+                                    Timing.RunCoroutine(damagePlayer(pl), "insdeath");
                                 }
                             }
                             while (true)
                             {
+                                if (CI == 0 || MTF == 0)
+                                {
+                                    break;
+                                }
+                                CI = 0;
+                                MTF = 0;
                                 foreach (var pl in Player.List)
                                 {
-                                    Plugin.recalculatePlayers();
                                     if (pl.IsNTF)
                                     {
                                         MTF += 1;
@@ -662,31 +741,43 @@ namespace FunnyGuns
                                         CI += 1;
                                     }
                                 }
-                                if (MTF == 0 || CI == 0)
-                                {
-                                    break;
-                                }
-                                else
-                                {
-                                    foreach (var pl in Plugin.active_playerlist)
-                                    {
-                                        if (pl.Role != RoleType.Spectator)
-                                        {
-                                            pl.ShowHint($"Уничтожьте <color=red>вражескую команду</color>.\nОсталось {(pl.IsNTF ? $"<color=green>{CI} хаосит(ов)</color>" : $"<color=blue>{MTF} NTF</color>")}");
-                                        }
-                                    }
-                                }
                                 yield return Timing.WaitForSeconds(0.5f);
                             }
-                            Warhead.IsLocked = false;
-                            Warhead.Start();
-                            Warhead.Stop();
-                            string message = $"All {(MTF == 0 ? "MTFUnits" : "Chaos agents")} have been terminated .";
-                            Cassie.Message(message);
+                            Cassie.Message($"{(CI == 0 ? "All chaos agents have been terminated" : "All MTFUnits have been terminated")}");
+                            Timing.KillCoroutines("insdeath");
+                            Log.Debug($"Event ended with: CI = {CI}; MTF = {MTF};");
+                            Log.Debug($"If some errors occured during the event, feel free to contact Treeshold#0001 for assistance. And include BBI: {Plugin.BBI}");
                             StopEvent();
-                            yield break;
                         }
                     }
+                }
+            }
+        }
+
+        static IEnumerator<float> damagePlayer(Player pl)
+        {
+            Timing.KillCoroutines("heal");
+            while (Round.IsStarted)
+            {
+                pl.ShowHint($"\n\n\n\n\n\nТекущая стадия: <color=black>5</color>.\nАктивна <color=red>внезапная смерть</color>!", 1);
+                pl.Hurt(1, DamageTypes.Bleeding);
+                yield return Timing.WaitForSeconds(0.35f);
+                if (pl.Health < 1)
+                {
+                    yield break;
+                }
+            }
+        }
+
+        public static void DoorInteract(InteractingDoorEventArgs ev)
+        {
+            if (Mutators.doorJam && ev.IsAllowed)
+            {
+                int rand = UnityEngine.Random.Range(1, 101);
+                if (rand < 85)
+                {
+                    ev.IsAllowed = false;
+                    ev.Player.Broadcast(3, "<color=red>Дверь заклинило!</color>", Broadcast.BroadcastFlags.Normal, true);
                 }
             }
         }
@@ -724,7 +815,15 @@ namespace FunnyGuns
                         }
                         else if (Plugin.stage == 3)
                         {
+                            ev.Amount *= 1.5f;
+                        }
+                        else if (Plugin.stage == 4)
+                        {
                             ev.Amount *= 2;
+                        }
+                        else if (Plugin.stage == 5)
+                        {
+                            ev.Amount *= 4;
                         }
                         if (ev.Amount <= 20)
                         {
@@ -794,11 +893,72 @@ namespace FunnyGuns
 
         public static void OnWaitingForPlayers()
         {
+            Plugin.suicideisKill = false;
+            Plugin.shopInventory.Clear();
             Mutators.usedMutators.Clear();
             Plugin.isRunning = false;
             Plugin.isOverriden = false;
             Plugin.isPlayerOverriden = false;
             StopEvent();
+            Plugin.shopInventory.Add(Classes.shopItem.initialize("60 Дополнительного здоровья", "ahp", 10, (pl) =>
+            {
+                pl.ArtificialHealth += 60;
+            }));
+            Plugin.shopInventory.Add(Classes.shopItem.initialize("SCP-500", "scp500", 20, (pl) =>
+            {
+                if (pl.Items.Count == 8)
+                {
+                    pl.Broadcast(5, "Нет свободных слотов, монеты не списаны!", Broadcast.BroadcastFlags.Normal, true);
+                    Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"] += 20;
+                }
+                else
+                {
+                    pl.AddItem(ItemType.SCP500);
+                }
+            }));
+            Plugin.shopInventory.Add(Classes.shopItem.initialize("Кола", "coke", 10, (pl) => 
+            {
+                if (pl.Items.Count == 8)
+                {
+                    pl.Broadcast(5, "Нет свободных слотов, монеты не списаны!", Broadcast.BroadcastFlags.Normal, true);
+                    Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"] += 10;
+                }
+                else
+                {
+                    pl.AddItem(ItemType.SCP207);
+                }
+            }));
+            Plugin.shopInventory.Add(Classes.shopItem.initialize("Тинькофф блэк (чёрная карта)", "o5", 20, (pl) => 
+            {
+                if (pl.Items.Count == 8)
+                {
+                    pl.Broadcast(5, "Нет свободных слотов, монеты не списаны!", Broadcast.BroadcastFlags.Normal, true);
+                    Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"] += 20;
+                }
+                else
+                {
+                    pl.AddItem(ItemType.KeycardO5);
+                }
+            }));
+            Plugin.shopInventory.Add(Classes.shopItem.initialize("Граната", "frag", 15, (pl) => 
+            {
+                if (pl.Items.Count == 8)
+                {
+                    pl.Broadcast(5, "Нет свободных слотов, монеты не списаны!", Broadcast.BroadcastFlags.Normal, true);
+                    Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"] += 15;
+                }
+                else
+                {
+                    pl.AddItem(ItemType.GrenadeHE);
+                }
+            }));
+            Log.Debug("DEBUG: Shop has these items initialised:\n");
+            foreach (var item in Plugin.shopInventory)
+            {
+                Log.Debug($"\n---Name: {item.name}---\n" +
+                    $"Command to purchase: .shop {item.commandname}\n" +
+                    $"Price: {item.price}\n");
+            }
         }
     }
 }

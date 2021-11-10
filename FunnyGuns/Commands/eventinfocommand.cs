@@ -10,7 +10,7 @@ namespace FunnyGuns.Commands
     [CommandHandler(typeof(ClientCommandHandler))]
     class eventinfocommand : ICommand
     {
-        public string Command => "fg_event_info";
+        public string Command => "fg_event";
 
         public string[] Aliases => null;
 

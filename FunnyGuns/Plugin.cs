@@ -19,13 +19,22 @@ namespace FunnyGuns
         public static int MutatorOverride = 0;
         public static bool allowRespawningWithRA;
         public static int overrideHisRespawn;
+        public static bool suicideisKill;
+        //shop
+        public static Dictionary<string, int> shopDict = new Dictionary<string, int>(); //Used as (PlayerDefinitionID, Balance)!!11! Rember that stoopid treeshuld
+        public static Dictionary<string, Exiled.API.Features.Player> playerClientDict = new Dictionary<string, Exiled.API.Features.Player>(); //Defenitions for string stuff
+        //Mutators
+        public static 
+
+        public static List<Classes.shopItem> shopInventory = new List<Classes.shopItem>(); //Shop Items Live Here
 
         public static bool isPrep = true;
         public static bool isRunning = false;
         public static int stage;
         public static int secondsTillNextStage;
-        
 
+        public static bool isDevMode = true; //Remember to disable it plz
+        public static string BBI = "000011x001"; //DO NOT REFORMAT!
         public override string Author => "Treeshold (aka Star Buttefly) | plz dont hate me";
         public override string Name => "Funny Guns";
 
@@ -41,17 +50,19 @@ namespace FunnyGuns
 
         public override void OnEnabled()
         {
-            Log.Info("╔══════════════════════════════════════════════╗");
-            Log.Info("║               FunnyGuns Event                ║");
-            Log.Info("║                (Pre-Release)                 ║");
-            Log.Info("║ Made by Treeshold#0001 (aka. Star Butterfly) ║");
-            Log.Info("║    Beta Build Identifier(BBI): 000007x001    ║");
-            Log.Info("║  if you want to send feedback, include BBI!  ║");
-            Log.Info("╚══════════════════════════════════════════════╝");
+            Log.Info($"╔══════════════════════════════════════════════╗");
+            Log.Info($"║               FunnyGuns Event                ║");
+            Log.Info($"║                (Pre-Release)                 ║");
+            Log.Info($"║ Made by Treeshold#0001 (aka. Star Butterfly) ║");
+            Log.Info($"║    Beta Build Identifier(BBI): {BBI}    ║"     ); //IT'S OKAY, DO NOT EDIT!
+            Log.Info($"║  if you want to send feedback, include BBI!  ║");
+            Log.Info($"╚══════════════════════════════════════════════╝");
             Log.Warn("Warning! Beta! Some things may or may not work!");
 
             Server.RoundStarted += lh.OnRoundStarted;
             Server.WaitingForPlayers += lh.OnWaitingForPlayers;
+            Player.Died += lh.KilledPlayer;
+            Player.InteractingDoor += lh.DoorInteract;
             Player.Hurting += lh.OnHurt;
             Player.ChangingRole += lh.PlayerFuckingDied;
             Player.ReloadingWeapon += lh.onReload;
@@ -65,6 +76,8 @@ namespace FunnyGuns
         {
             Server.RoundStarted -= lh.OnRoundStarted;
             Server.WaitingForPlayers -= lh.OnWaitingForPlayers;
+            Player.InteractingDoor -= lh.DoorInteract;
+            Player.Died -= lh.KilledPlayer;
             Player.Hurting -= lh.OnHurt;
             Player.ChangingRole -= lh.PlayerFuckingDied;
             Player.ReloadingWeapon -= lh.onReload;
