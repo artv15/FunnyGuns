@@ -10,7 +10,7 @@ Auto-event consists of 5 stages, at which:
  - Stage 4: 3 mutators, damage is 2x!
  - Stage 5: Instant death (health is drained), no mutators, damage is 5x!
 
-## How mutators work?
+## How do mutators work?
 ~~Pure random~~ 
 **I am not talking how they are assigned!**
 At first, plugin loads all mutators, designated at WaitingForPlayers. Adding one looks like this:
