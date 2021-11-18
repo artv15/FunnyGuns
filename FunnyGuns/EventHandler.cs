@@ -788,17 +788,13 @@ namespace FunnyGuns
 
         static IEnumerator<float> playerHealing()
         {
-            bool stopCoroutine = false;
             while (Round.IsStarted && Plugin.isRunning)
             {
                 bool shouldHeal = true;
-                foreach (var mut in Plugin.engagedMutators)
+                if (Classes.Mutator.mutatorExists("moveOrDie")) //ok
                 {
-                    if (mut.commandName == "moveOrDie")
-                    {
-                        shouldHeal = false;
-                        break;
-                    }
+                    shouldHeal = false;
+                    break;
                 }
                 yield return Timing.WaitForSeconds(0.75f);
                 if (shouldHeal)
@@ -812,6 +808,12 @@ namespace FunnyGuns
                     }
                 }
             }
+        }
+
+        static void genActivated(GeneratorActivatedEventArgs ev)
+        {
+            ev.Generator.Engaged = false;
+            ev.Generator.Activating = false;
         }
 
         public static void OnRoundStarted()
@@ -1030,8 +1032,8 @@ namespace FunnyGuns
                     tesla.enabled = true;
                 }
             }, (pl) => { }));
-            Plugin.loadedMutators.Add(Classes.Mutator.initialize("<color=orange>Густой туман</color>", "denseFog", () => 
-            { 
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize("<color=orange>Густой туман</color>", "denseFog", () =>
+            {
                 foreach (var pl in Player.List)
                 {
                     pl.EnableEffect(Exiled.API.Enums.EffectType.Amnesia);
@@ -1042,7 +1044,7 @@ namespace FunnyGuns
                 {
                     pl.DisableEffect(Exiled.API.Enums.EffectType.Amnesia);
                 }
-            }, (pl) => 
+            }, (pl) =>
             {
                 pl.EnableEffect(Exiled.API.Enums.EffectType.Amnesia);
             }));
@@ -1052,6 +1054,16 @@ namespace FunnyGuns
             {
                 Log.Debug($"Name: {mut.commandName}\n");
             }
+
+            /*
+             so i am close to 1069 lines
+             this is pog
+             i'd say.
+             hello my nervous system
+             we fucking
+             finally
+             nailed it!
+             */
         }
     }
 }
