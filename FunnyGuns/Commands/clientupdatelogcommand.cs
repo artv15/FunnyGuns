@@ -18,7 +18,13 @@ namespace FunnyGuns.Commands
 
         public bool Execute(ArraySegment<string> arguments, ICommandSender sender, out string response)
         {
-            response = $"\n<color=green>`Everyone Equal` update</color>\n\n<color=yellow>--Общие изменения--</color>\n<color=yellow>1. Админы не могут спавниться после начала ивента (начало - 1-я стадия) [BUGS MAY OCCUR, UNSTABLE]</color>\n<color=green>2. Теперь не будет объявляться о смерти ново-зашедших игроков (bugfix)</color>\n<color=green>3. Переработан стартовый инветарь у обоих комманд, так как у хаоситов явное преймущество!</color>\n<color=green>4. (server-side) Починен StackOverFlow при мутаторе `Падение с любой высоты`</color>\n<color=green>5. Добавлен магазин (.shop)</color>\n\n<color=red>GLHF!</color>\n\nNerd Stuff:\nBeta Build Identifier: {Plugin.BBI}";
+            response = $"\n<color=green>New begginings update</color>\n<color=green>В этом обновлении в основном был оптимизирован код и добавились новые механики</color>\n\n<color=green>1. Починен модуль анти-абуза, раньше он выдавал false-positive'ы.</color>\n" +
+                $"<color=green>2. Добавлено 2 новых мутатора: Move or Die и отключение тесла ворот</color>\n\n" +
+                $"<color=blue>Теперь обновления для серверов</color>\n" +
+                $"<color=green>1. Так как теперь мутатор - это класс, мутаторы подгружаются во время ожидания игроков. Если у вас ошибки при случайном выборе мутатора, проверьте, загружены ли мутаторы!</color>\n" +
+                $"<color=green>2. Предметы в магазине - тоже класс. Они также пишутся в консоли сервера при инициальзации.</color>\n\n" +
+                $"<color=red>GLHF!</color>\n\n" +
+                $"Build Identifier: {Plugin.BBI}";
             return true;
         }
     }

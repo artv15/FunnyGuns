@@ -98,15 +98,23 @@ namespace FunnyGuns.Commands
             }
             catch (Exception ex) //if not registered by killing!
             {
-                var msg = $"<color=green>---Funny Guns > Shop---</color>\n" +
-                        $"<color=green>Ваш баланс: 0</color>\n\n<color=yellow>---Каталог---</color>\n";
-                foreach (var listitem in Plugin.shopInventory)
+                if (Plugin.isRunning)
                 {
-                    msg += $"<color=yellow>{listitem.name} | {listitem.price} | .shop {listitem.commandname}</color>\n";
+                    var msg = $"<color=green>---Funny Guns > Shop---</color>\n" +
+                            $"<color=green>Ваш баланс: 0</color>\n\n<color=yellow>---Каталог---</color>\n";
+                    foreach (var listitem in Plugin.shopInventory)
+                    {
+                        msg += $"<color=yellow>{listitem.name} | {listitem.price} | .shop {listitem.commandname}</color>\n";
+                    }
+                    msg += $"\n<color=orange>Чтобы купить товар, введите команду `.shop [имя]`, например: `.shop ahp`</color>";
+                    response_give = msg;
                 }
-                msg += $"\n<color=orange>Чтобы купить товар, введите команду `.shop [имя]`, например: `.shop ahp`</color>";
-                response_give = msg;
+                else
+                {
+                    response_give = $"<color=red>Ивент не запущен! Попроси ивентолога начать Funny Guns в следующем раунде!</color>";
+                }
             }
+            
             response = response_give;
             return true;
         }

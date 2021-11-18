@@ -51,6 +51,9 @@
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
+    <Reference Include="VoiceChatManager.Core">
+      <HintPath>..\..\..\..\Desktop\haha code\vcm\VoiceChatManager.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

@@ -42,7 +42,8 @@ namespace FunnyGuns
             public string commandName;
             public Action engage;
             public Action disengage;
-            public Action onRespawn;
+            public Action<Player> onRespawn;
+            public List<string> conflicts;
 
             /// <summary>
             /// Creates a new object of class mutator.
@@ -53,7 +54,7 @@ namespace FunnyGuns
             /// <param name="disengage">This method will be called when mutator deactivates! (Required)</param>
             /// <param name="onRespawn">This method will be called when player respawns! (Optional)</param>
             /// <returns>Returns Mutator object.</returns>
-            public static Mutator initialize (string plName, string commandName, Action engage, Action disengage, Action onRespawn)
+            public static Mutator initialize(string plName, string commandName, Action engage, Action disengage, Action<Player> onRespawn)
             {
                 var mutator = new Mutator();
                 mutator.hudName = plName;
@@ -66,7 +67,66 @@ namespace FunnyGuns
 
             public static void disableAll()
             {
+                foreach (var mut in Plugin.engagedMutators)
+                {
+                    mut.disengage.Invoke();
+                }
+                Plugin.engagedMutators.Clear();
+            }
 
+            /// <summary>
+            /// Starts a mutator by a devName. If started successfully, returns true. In other case, returns false.
+            /// </summary>
+            /// <param name="devName">DevName of a mutator</param>
+            /// <returns>True = success, false = not found</returns>
+            public static bool forciblyEngageMutator(string devName)
+            {
+                foreach (var mut in Plugin.loadedMutators)
+                {
+                    if (mut.commandName == devName)
+                    {
+                        mut.engage.Invoke();
+                        Plugin.engagedMutators.Add(mut);
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            /// <summary>
+            /// Stops a mutator by a devName. If started successfully, returns true. In other case, returns false.
+            /// </summary>
+            /// <param name="devName">DevName of a mutator</param>
+            /// <returns>True = success, false = not found</returns>
+            public static bool forciblyDestroyMutator(string devName)
+            {
+                foreach (var mut in Plugin.loadedMutators)
+                {
+                    if (mut.commandName == devName)
+                    {
+                        mut.disengage.Invoke();
+                        Plugin.engagedMutators.Remove(mut);
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            /// <summary>
+            /// Checks if a mutator is running.
+            /// </summary>
+            /// <param name="devName">DevName of a mutator</param>
+            /// <returns>True = yes; False = no</returns>
+            public static bool mutatorExists(string devName)
+            {
+                foreach (var mut in Plugin.loadedMutators)
+                {
+                    if (mut.commandName == devName)
+                    {
+                        return true;
+                    }
+                }
+                return false;
             }
         }
     }

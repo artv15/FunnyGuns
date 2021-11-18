@@ -49,14 +49,13 @@ namespace FunnyGuns
 
         public static void StartEvent()
         {
+            Classes.Mutator.disableAll();
             Plugin.shopDict.Clear();
             Mutators.areShotsMoreDeadly = false;
             Mutators.areLightsDown = false;
             Map.TurnOffAllLights(0f);
             Mutators.isFallDamageFatal = false;
             Mutators.noRegen = false;
-            Mutators.disableMutators();
-            Mutators.DisableWH();
             Plugin.isRunning = true;
             Timing.RunCoroutine(playerHealing(), "heal");
             Plugin.active_playerlist = Exiled.API.Features.Player.List;
@@ -64,10 +63,12 @@ namespace FunnyGuns
             PlayerSpawn();
             Timing.RunCoroutine(GameController(), "eventcontrol");
             Plugin.stage = 1;
+            Plugin.isEventFrozen = false;
         }
 
         public static void StopEvent()
         {
+            Classes.Mutator.disableAll();
             Plugin.shopDict.Clear();
             Plugin.isMTFBigger = false;
             Plugin.isRunning = false;
@@ -78,15 +79,13 @@ namespace FunnyGuns
             Timing.KillCoroutines("eventcontrol");
             Timing.KillCoroutines("gamePrep");
             Timing.KillCoroutines("respawnci");
-            Mutators.usedMutators.Clear();
-            Mutators.disableMutators();
             Mutators.fastRun = false;
-            Mutators.DisableWH();
             Mutators.areShotsMoreDeadly = false;
             Mutators.areLightsDown = false;
             Map.TurnOffAllLights(0f);
             Mutators.isFallDamageFatal = false;
             Mutators.noRegen = false;
+            Plugin.isEventFrozen = false;
         }
 
         public static void PlayerFuckingDied(ChangingRoleEventArgs ev)
@@ -114,6 +113,17 @@ namespace FunnyGuns
                     ev.Player.Broadcast(5, "Админ пытался сменить твой класс. Мы, конечно, не дали такому случится, ведь это <color=red>абуз</color>!", Broadcast.BroadcastFlags.Normal, true);
                     Log.Warn("Abuse attempt detected! But maybe it's false positive!");
                 }
+                else
+                {
+                    if (Plugin.engagedMutators.Count > 0)
+                    {
+                        foreach (var mut in Plugin.engagedMutators)
+                        {
+                            Log.Debug($"Executing {mut.commandName} onrespawn method.");
+                            Timing.CallDelayed(1f, () => mut.onRespawn.Invoke(ev.Player));
+                        }
+                    }
+                }
             }
         }
 
@@ -121,12 +131,13 @@ namespace FunnyGuns
         {
             /*
             Gonna comment almost everything, because testing required!
+            not amymore, but im lazy
             */
             Log.Debug("Called Player spawn and enabled spawn override!");
             Plugin.allowRespawningWithRA = true; //Giving plugin ability to override spawn coroutine
             Plugin.recalculatePlayers(); //used for determining how many players are going to be spawned!
-            int playersINT = Plugin.CountList; 
-            int MTFUnitAmout; 
+            int playersINT = Plugin.CountList;
+            int MTFUnitAmout;
             int CIAmount;
             if (playersINT % 2 == 0) //Equal spawn
             {
@@ -145,16 +156,16 @@ namespace FunnyGuns
             }
             foreach (var pl in Plugin.active_playerlist)
             {
-                
+
                 if (MTFUnitAmout != 0 && CIAmount != 0) //Still could randomly spawn!
                 {
                     try
                     {
                         int randint = UnityEngine.Random.Range(1, 3); //Select CI or MTF!
-                        Log.Debug($"Spawning `{pl.Nickname} ({pl.UserId})` as {(randint == 1 ? "MTF" : "CI" )}!"); //Test it plz
+                        Log.Debug($"Spawning `{pl.Nickname} ({pl.UserId})` as {(randint == 1 ? "MTF" : "CI")}!"); //Test it plz
                         if (randint == 1) //MTF
                         {
-                            int roleSel = UnityEngine.Random.Range(1, 4); 
+                            int roleSel = UnityEngine.Random.Range(1, 4);
                             switch (roleSel) //MTF Subclasses
                             {
                                 case 1:
@@ -238,7 +249,7 @@ namespace FunnyGuns
                         if (MTFUnitAmout == 0) //If MTF ran out of tickets
                         {
                             Log.Debug($"Spawning `{pl.Nickname} ({pl.UserId})` as CI!"); //Test it plz
-                            int roleSel = UnityEngine.Random.Range(1, 3); 
+                            int roleSel = UnityEngine.Random.Range(1, 3);
                             switch (roleSel)
                             {
                                 case 1:
@@ -324,7 +335,7 @@ namespace FunnyGuns
                 Plugin.shopDict.Add($"{pl.Nickname} ({pl.UserId})", 0);
                 Plugin.playerClientDict.Add($"{pl.Nickname} ({pl.UserId})", pl);
             }
-            if (ev.Killer != ev.Target || Plugin.suicideisKill)
+            if ((ev.Killer != ev.Target || Plugin.suicideisKill) && Plugin.isRunning)
             {
                 int currentBal = Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"];
                 Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"] = currentBal += 10;
@@ -446,9 +457,9 @@ namespace FunnyGuns
             Plugin.isPrep = true;
             foreach (var door in Map.Doors)
             {
+                door.IsOpen = false; //Why not?
                 if (door.Nametag == "SURFACE_GATE")
                 {
-                    door.IsOpen = false;
                     door.ChangeLock(Exiled.API.Enums.DoorLockType.AdminCommand);
                 }
             }
@@ -504,7 +515,7 @@ namespace FunnyGuns
                 }
                 else
                 {
-                    
+
                     if (Plugin.secondsTillNextStage >= 1 && Plugin.stage != 5)
                     {
                         MTF = 0;
@@ -530,7 +541,10 @@ namespace FunnyGuns
                                 StopEvent();
                             }
                         }
-                        Plugin.secondsTillNextStage -= 1;
+                        if (!Plugin.isEventFrozen)
+                        {
+                            Plugin.secondsTillNextStage -= 1;
+                        }
                         yield return Timing.WaitForSeconds(1f);
                         //Status bar and mutators display here!
                         string color;
@@ -557,86 +571,26 @@ namespace FunnyGuns
                         }
                         foreach (var pl in Player.List)
                         {
-                            string msg = $"\n\n\n\n\n\nТекущая стадия: <color={color}>{Plugin.stage}</color>. Время до следующей стадии: <color=orange>{Plugin.secondsTillNextStage}</color>";
-                            if (Mutators.doorJam || Mutators.fastRun || Mutators.areLightsDown || Mutators.noRegen || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.legalWH)
+                            string msg = $"\n\n\n\n\n\nТекущая стадия: <color={color}>{Plugin.stage}</color>. {(Plugin.isEventFrozen ? "<color=red>Development override: Time frozen.</color>" : $"Время до следующей стадии: <color=orange>{Plugin.secondsTillNextStage}</color>")}";
+                            if (Plugin.engagedMutators.Count > 0)
                             {
                                 msg += "\nАктивные мутаторы: ";
-                            }
-                            if (Mutators.doorJam)
-                            {
-                                msg += $"<color=orange>Двери заклинило</color>";
-                                if (Mutators.fastRun || Mutators.areLightsDown || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.noRegen || Mutators.legalWH)
+
+                                int i = 0;
+                                int elements = Plugin.engagedMutators.Count;
+                                foreach (var mutator in Plugin.engagedMutators)
                                 {
-                                    msg += ", ";
+                                    i++;
+                                    msg += mutator.hudName;
+                                    if (i != elements)
+                                    {
+                                        msg += ", ";
+                                    }
+                                    else
+                                    {
+                                        msg += ".";
+                                    }
                                 }
-                                else
-                                {
-                                    msg += ".";
-                                }
-                            }
-                            if (Mutators.fastRun)
-                            {
-                                msg += $"<color=blue>Скорость передвижения увеличена!</color>";
-                                if (Mutators.areLightsDown || Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.noRegen || Mutators.legalWH)
-                                {
-                                    msg += ", ";
-                                }
-                                else
-                                {
-                                    msg += ".";
-                                }
-                            }
-                            if (Mutators.areLightsDown)
-                            {
-                                msg += $"<color=yellow>Нет света</color>";
-                                if (Mutators.areShotsMoreDeadly || Mutators.isFallDamageFatal || Mutators.noRegen || Mutators.legalWH)
-                                {
-                                    msg += ", ";
-                                }
-                                else
-                                {
-                                    msg += ".";
-                                }
-                            }
-                            if (Mutators.areShotsMoreDeadly)
-                            {
-                                msg += $"<color=red>Урон от оружий усилен! (3.5X)</color>";
-                                if (Mutators.isFallDamageFatal || Mutators.noRegen || Mutators.legalWH)
-                                {
-                                    msg += ", ";
-                                }
-                                else
-                                {
-                                    msg += ".";
-                                }
-                            }
-                            if (Mutators.isFallDamageFatal)
-                            {
-                                msg += $"<color=red>Падение с любой высоты фатально</color>";
-                                if (Mutators.noRegen || Mutators.legalWH)
-                                {
-                                    msg += ", ";
-                                }
-                                else
-                                {
-                                    msg += ".";
-                                }
-                            }
-                            if (Mutators.noRegen)
-                            {
-                                msg += $"<color=red>Нет пассивной регенерации</color>";
-                                if (Mutators.legalWH)
-                                {
-                                    msg += ", ";
-                                }
-                                else
-                                {
-                                    msg += ".";
-                                }
-                            }
-                            if (Mutators.legalWH)
-                            {
-                                msg += $"<color=green>Рентгеновское зрение</color>.";
                             }
                             pl.ShowHint(msg, 2);
                         }
@@ -647,76 +601,45 @@ namespace FunnyGuns
                         {
                             Plugin.secondsTillNextStage = 90;
                             Plugin.stage += 1;
-                            int randomMutator;
-                            if (Plugin.MutatorOverride == 0)
+                            int LoadedMutators = Plugin.loadedMutators.Count;
+                            int i = 0;
+                            int ttl = 50;
+                            bool keepsearching = true;
+                            Classes.Mutator selected = Classes.Mutator.initialize("<color=red>[ERROR] Failed to randomly select mutator, no mutator initiated.</color>", "FailedToLoad", () => { }, () => { }, (pl) => { });
+                            while (keepsearching)
                             {
-                                randomMutator = UnityEngine.Random.Range(1, 8);
-                            }
-                            else
-                            {
-                                randomMutator = Plugin.MutatorOverride;
-                                Plugin.MutatorOverride = 0;
-                            }
-                            while (true)
-                            {
-                                if (Mutators.usedMutators.Contains(randomMutator))
-                                {
-                                    randomMutator = UnityEngine.Random.Range(1, 8);
-                                }
-                                else
+                                ttl--;
+                                if (ttl < 1)
                                 {
                                     break;
                                 }
+                                i = 0;
+                                int randomMutator = UnityEngine.Random.Range(1, LoadedMutators + 1); //Everything is fine, do not edit!
+                                foreach (var mut in Plugin.loadedMutators)
+                                {
+                                    i++;
+                                    if (i == randomMutator)
+                                    {
+                                        if (!(Plugin.engagedMutators.Contains(mut)))
+                                        {
+                                            selected = mut;
+                                            keepsearching = false;
+                                            break;
+                                        }
+                                    }
+                                }
                             }
+                            selected.engage.Invoke();
+                            Plugin.engagedMutators.Add(selected);
 
-
-                            switch (randomMutator)
-                            {
-                                case 1:
-                                    Mutators.FatalGravity();
-                                    break;
-                                case 2:
-                                    Mutators.LightsDown();
-                                    break;
-                                case 3:
-                                    Mutators.RegenOff();
-                                    break;
-                                case 4:
-                                    Mutators.ShotsDeadlier();
-                                    break;
-                                case 5:
-                                    Mutators.EnableWH();
-                                    break;
-                                case 6:
-                                    Mutators.runFastOn();
-                                    break;
-                                case 7:
-                                    Mutators.jamDoors();
-                                    break;
-                                default:
-                                    Log.Error("Random Mutator selector chose out of range. Either admin setted mutator out of range or RNG is broken. Check RA logs for command fg_override mutator [ID] before reporting the issue!");
-                                    break;
-                            }
                             Cassie.Message(".g4 .g4 .g4", false, false); //some signal of stage changing, i guess...
-                            Mutators.usedMutators.Add(randomMutator); //Adding to NOT use the same mutator
                         }
                         else
                         {
+                            Classes.Mutator.disableAll();
                             foreach (var pl in Player.List)
                             {
-
-                            }
-                            Mutators.disableMutators();
-                            Mutators.areShotsMoreDeadly = false;
-                            Mutators.areLightsDown = false;
-                            Map.TurnOffAllLights(0f);
-                            Mutators.isFallDamageFatal = false;
-                            Mutators.noRegen = false;
-                            Mutators.runFastOff();
-                            Mutators.DisableWH();
-                            Mutators.usedMutators.Clear();
-                            foreach (var pl in Player.List)
-                            {
+                                pl.Broadcast(10, "<color=red>We want more!</color>\n Наступила <color=red>внезапная смерть</color>! Запаситесь аптечками, и отстреливайтесь от вражеской команды!");
                                 if (pl.Role != RoleType.Spectator)
                                 {
                                     Timing.RunCoroutine(damagePlayer(pl), "insdeath");
@@ -745,7 +668,7 @@ namespace FunnyGuns
                             }
                             Cassie.Message($"{(CI == 0 ? "All chaos agents have been terminated" : "All MTFUnits have been terminated")}");
                             Timing.KillCoroutines("insdeath");
-                            Log.Debug($"Event ended with: CI = {CI}; MTF = {MTF};");
+                            Log.Debug($"Event ended with: CI = {CI}; MTF = {MTF}; This data may be not accurate!");
                             Log.Debug($"If some errors occured during the event, feel free to contact Treeshold#0001 for assistance. And include BBI: {Plugin.BBI}");
                             StopEvent();
                         }
@@ -865,14 +788,27 @@ namespace FunnyGuns
 
         static IEnumerator<float> playerHealing()
         {
+            bool stopCoroutine = false;
             while (Round.IsStarted && Plugin.isRunning)
             {
-                yield return Timing.WaitForSeconds(0.75f);
-                foreach (var pl in Plugin.active_playerlist)
+                bool shouldHeal = true;
+                foreach (var mut in Plugin.engagedMutators)
                 {
-                    if ((pl.Health < pl.MaxHealth && pl.Role != RoleType.Spectator) && !Mutators.noRegen)
+                    if (mut.commandName == "moveOrDie")
                     {
-                        pl.Health += 1;
+                        shouldHeal = false;
+                        break;
+                    }
+                }
+                yield return Timing.WaitForSeconds(0.75f);
+                if (shouldHeal)
+                {
+                    foreach (var pl in Player.List)
+                    {
+                        if ((pl.Health < pl.MaxHealth && pl.Role != RoleType.Spectator) && !Mutators.noRegen)
+                        {
+                            pl.Health += 1;
+                        }
                     }
                 }
             }
@@ -895,7 +831,7 @@ namespace FunnyGuns
         {
             Plugin.suicideisKill = false;
             Plugin.shopInventory.Clear();
-            Mutators.usedMutators.Clear();
+            Classes.Mutator.disableAll();
             Plugin.isRunning = false;
             Plugin.isOverriden = false;
             Plugin.isPlayerOverriden = false;
@@ -916,7 +852,7 @@ namespace FunnyGuns
                     pl.AddItem(ItemType.SCP500);
                 }
             }));
-            Plugin.shopInventory.Add(Classes.shopItem.initialize("Кола", "coke", 10, (pl) => 
+            Plugin.shopInventory.Add(Classes.shopItem.initialize("Кола", "coke", 10, (pl) =>
             {
                 if (pl.Items.Count == 8)
                 {
@@ -928,7 +864,7 @@ namespace FunnyGuns
                     pl.AddItem(ItemType.SCP207);
                 }
             }));
-            Plugin.shopInventory.Add(Classes.shopItem.initialize("Тинькофф блэк (чёрная карта)", "o5", 20, (pl) => 
+            Plugin.shopInventory.Add(Classes.shopItem.initialize("Тинькофф блэк (чёрная карта)", "o5", 20, (pl) =>
             {
                 if (pl.Items.Count == 8)
                 {
@@ -940,7 +876,7 @@ namespace FunnyGuns
                     pl.AddItem(ItemType.KeycardO5);
                 }
             }));
-            Plugin.shopInventory.Add(Classes.shopItem.initialize("Граната", "frag", 15, (pl) => 
+            Plugin.shopInventory.Add(Classes.shopItem.initialize("Граната", "frag", 15, (pl) =>
             {
                 if (pl.Items.Count == 8)
                 {
@@ -952,12 +888,169 @@ namespace FunnyGuns
                     pl.AddItem(ItemType.GrenadeHE);
                 }
             }));
+            Plugin.shopInventory.Add(Classes.shopItem.initialize("Респавн за случайную команду", "respawn", 50, (pl) =>
+            {
+                if (pl.Role == RoleType.Spectator)
+                {
+                    int randomTeam = UnityEngine.Random.Range(1, 3);
+                    if (randomTeam == 1)
+                    {
+                        Plugin.overrideHisRespawn = pl.Id;
+                        pl.Role = RoleType.NtfSpecialist;
+                        Plugin.overrideHisRespawn = 0;
+                        pl.ClearInventory();
+                        pl.AddItem(ItemType.ArmorCombat);
+                        pl.AddItem(ItemType.GrenadeHE);
+                        pl.AddItem(ItemType.Medkit);
+                        pl.AddItem(ItemType.Medkit);
+                        pl.AddItem(ItemType.Adrenaline);
+                        pl.AddItem(ItemType.KeycardNTFCommander);
+                        pl.AddItem(ItemType.GunE11SR);
+                        pl.AddItem(ItemType.Flashlight);
+                    }
+                    else
+                    {
+                        Plugin.overrideHisRespawn = pl.Id;
+                        pl.Role = RoleType.ChaosConscript;
+                        Plugin.overrideHisRespawn = 0;
+                        pl.ClearInventory();
+                        pl.AddItem(ItemType.ArmorCombat);
+                        pl.AddItem(ItemType.GrenadeHE);
+                        pl.AddItem(ItemType.Medkit);
+                        pl.AddItem(ItemType.Medkit);
+                        pl.AddItem(ItemType.Adrenaline);
+                        pl.AddItem(ItemType.KeycardNTFCommander);
+                        pl.AddItem(ItemType.GunAK);
+                        pl.AddItem(ItemType.Flashlight);
+                    }
+                }
+                else
+                {
+                    pl.Broadcast(5, "<color=yellow>Ты ещё жив, сначала умри, а потом уже ресайся =)</color>", Broadcast.BroadcastFlags.Normal, true);
+                    Plugin.shopDict[$"{pl.Nickname} ({pl.UserId})"] += 50;
+                }
+            }));
             Log.Debug("DEBUG: Shop has these items initialised:\n");
             foreach (var item in Plugin.shopInventory)
             {
-                Log.Debug($"\n---Name: {item.name}---\n" +
-                    $"Command to purchase: .shop {item.commandname}\n" +
-                    $"Price: {item.price}\n");
+                Log.Debug($"Item {item.commandname} initialized!");
+            }
+
+            /*
+             How 2 add Mutators
+            by Treeshold#0001 for Treeshold#0001
+            Step 1: Create name with color! It will be shown to a player!
+            Step 2: Create name for development/admins. It will be shown in logs and can be called using fg_override
+            Step 3: Add 3 functions. From 1st to last: Mutator chosen, Mutator stopped, Player respawned when Mutator was active.
+            Psst. If you don't need to check respawn, just type "(pl) => { }" as shown in the example
+            If you are planning to do something with newly respawned player, use "(Player pl) => { //Your code here }". 
+            You will probably need one, if you use effects OR if mutator is tethered to only alive players, and if player is dead, the effect is no more.
+            Player object is called only in repsawn method, other methods don't receive anything!
+            Now go, and add your mutators!
+             */
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize("<color=orange>Двери заклинило</color>", "doorJam", () => { Mutators.doorJam = true; }, () => { Mutators.doorJam = false; }, (pl) => { }));
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize("<color=blue>Скорость передвижения увеличена!</color>", "speed++", () =>
+            {
+                Mutators.fastRun = true;
+                foreach (var pl in Player.List)
+                {
+                    if (pl.Role != RoleType.Spectator)
+                    {
+                        pl.EnableEffect(Exiled.API.Enums.EffectType.Scp207);
+                    }
+                }
+            },
+            () =>
+            {
+                Mutators.fastRun = false;
+                foreach (var pl in Player.List)
+                {
+                    pl.DisableEffect(Exiled.API.Enums.EffectType.Scp207);
+                }
+            },
+            (Player pl) =>
+            { pl.EnableEffect(Exiled.API.Enums.EffectType.Scp207); }));
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize($"<color=yellow>Нет света</color>", "lightsOut", () =>
+            {
+                Cassie.Message("Danger . light control system is .g4 .g4 .g4 error . error .g4 .g4 .g1. g2 3 . 2 . 1");
+                Timing.CallDelayed(Cassie.CalculateDuration("Danger . light control system is .g4 .g4 .g4 error . error .g4 .g4 .g1. g2 3 . 2 . 1") + 3f, () =>
+                {
+                    Map.TurnOffAllLights(10000f, Exiled.API.Enums.ZoneType.Unspecified);
+                });
+            }, () =>
+            { Map.TurnOffAllLights(0); }, (pl) => { }));
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize($"<color=red>Урон от оружий усилен! (3.5X)</color>", "damage++", () => { Mutators.areShotsMoreDeadly = true; }, () => { Mutators.areShotsMoreDeadly = false; }, (pl) => { }));
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize($"<color=red>Падение с любой высоты фатально</color>", "fallDamageFatal", () => { Mutators.isFallDamageFatal = true; }, () => { Mutators.isFallDamageFatal = false; }, (pl) => { }));
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize($"<color=red>Нет пассивной регенерации</color>", "noPassiveRegen", () => { Mutators.noRegen = true; }, () => { Mutators.noRegen = false; }, (pl) => { }));
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize($"<color=green>Рентгеновское зрение</color>", "legalWH", () =>
+            {
+                foreach (var pl in Player.List)
+                {
+                    if (pl.Role != RoleType.Spectator)
+                    {
+                        pl.EnableEffect(Exiled.API.Enums.EffectType.Visuals939);
+                    }
+                }
+            }, () =>
+            {
+                foreach (var pl in Player.List)
+                {
+                    pl.DisableEffect(Exiled.API.Enums.EffectType.Visuals939);
+                }
+            }, (Player pl) =>
+            {
+                pl.EnableEffect(Exiled.API.Enums.EffectType.Visuals939);
+            }));
+
+            //Unless I will find a way to heal player, if he move... WAIT! I GOT IT!
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize($"<color=blue>Move or Die</color>", "moveOrDie", () =>
+            {
+                foreach (var pl in Player.List)
+                {
+                    Timing.RunCoroutine(Mutators.doMoveOrdie(pl), "MoveOrDie");
+                }
+            }, () =>
+            {
+                Timing.KillCoroutines("MoveOrDie");
+
+            }, (Player pl) =>
+            {
+                Timing.RunCoroutine(Mutators.doMoveOrdie(pl), "MoveOrDie");
+            }));
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize("<color=orange>Тесла-ворота отключены.</color>", "teslagatesareIdle", () =>
+            {
+                foreach (var tesla in Map.TeslaGates)
+                {
+                    tesla.enabled = false;
+                }
+            }, () =>
+            {
+                foreach (var tesla in Map.TeslaGates)
+                {
+                    tesla.enabled = true;
+                }
+            }, (pl) => { }));
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize("<color=orange>Густой туман</color>", "denseFog", () => 
+            { 
+                foreach (var pl in Player.List)
+                {
+                    pl.EnableEffect(Exiled.API.Enums.EffectType.Amnesia);
+                }
+            }, () =>
+            {
+                foreach (var pl in Player.List)
+                {
+                    pl.DisableEffect(Exiled.API.Enums.EffectType.Amnesia);
+                }
+            }, (pl) => 
+            {
+                pl.EnableEffect(Exiled.API.Enums.EffectType.Amnesia);
+            }));
+
+            Log.Debug("These mutators were successfully loaded!");
+            foreach (var mut in Plugin.loadedMutators)
+            {
+                Log.Debug($"Name: {mut.commandName}\n");
             }
         }
     }

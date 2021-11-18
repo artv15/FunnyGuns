@@ -23,18 +23,25 @@ namespace FunnyGuns
         //shop
         public static Dictionary<string, int> shopDict = new Dictionary<string, int>(); //Used as (PlayerDefinitionID, Balance)!!11! Rember that stoopid treeshuld
         public static Dictionary<string, Exiled.API.Features.Player> playerClientDict = new Dictionary<string, Exiled.API.Features.Player>(); //Defenitions for string stuff
-        //Mutators
-        public static 
-
+        //Loaded and Engaged Mutators
+        /*
+         What are loaded and engaged mutators and what's the difference?
+        Loaded mutators, are mutators which will be chosen from by random mutator selector every stage OR can be called by admin.
+        Engaged mutators is updated by Mutator Assignment and contains all used mutators. Also, you can add them during the event by using fg_override mutator [commandname];
+         */
+        public static List<Classes.Mutator> loadedMutators = new List<Classes.Mutator>(); //Loaded mutators
+        public static List<Classes.Mutator> engagedMutators = new List<Classes.Mutator>(); //Engaged mutators
+        //Shop's loaded items.
         public static List<Classes.shopItem> shopInventory = new List<Classes.shopItem>(); //Shop Items Live Here
 
         public static bool isPrep = true;
         public static bool isRunning = false;
+        public static bool isEventFrozen = false;
         public static int stage;
         public static int secondsTillNextStage;
 
-        public static bool isDevMode = true; //Remember to disable it plz
-        public static string BBI = "000011x001"; //DO NOT REFORMAT!
+        public static bool isDevMode = false; //Remember to disable it plz
+        public static string BBI = "000014x001"; //DO NOT REFORMAT!
         public override string Author => "Treeshold (aka Star Buttefly) | plz dont hate me";
         public override string Name => "Funny Guns";
 
@@ -52,9 +59,9 @@ namespace FunnyGuns
         {
             Log.Info($"╔══════════════════════════════════════════════╗");
             Log.Info($"║               FunnyGuns Event                ║");
-            Log.Info($"║                (Pre-Release)                 ║");
+            Log.Info($"║                  (Stable)                    ║");
             Log.Info($"║ Made by Treeshold#0001 (aka. Star Butterfly) ║");
-            Log.Info($"║    Beta Build Identifier(BBI): {BBI}    ║"     ); //IT'S OKAY, DO NOT EDIT!
+            Log.Info($"║       Build Identifier(BI): {BBI}       ║"     ); //IT'S OKAY, DO NOT EDIT!
             Log.Info($"║  if you want to send feedback, include BBI!  ║");
             Log.Info($"╚══════════════════════════════════════════════╝");
             Log.Warn("Warning! Beta! Some things may or may not work!");

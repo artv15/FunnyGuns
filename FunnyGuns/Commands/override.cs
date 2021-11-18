@@ -96,7 +96,7 @@ namespace FunnyGuns.Commands
                             string secondarg;
                             try
                             {
-                                secondarg = arguments.Array[2].ToLower();
+                                secondarg = arguments.Array[2];
                             }
                             catch (Exception)
                             {
@@ -109,29 +109,81 @@ namespace FunnyGuns.Commands
                             }
                             else
                             {
-                                response = "Tried to override";
-                                Plugin.MutatorOverride = int.Parse(secondarg);
-                                var msg = "<color=green>Админ</color> выставил <color=blue>определённое значение</color> для следующего мутатора! <color=red>Следующий мутатор предопределён</color>!";
-                                Exiled.API.Features.Map.Broadcast(10, msg);
+                                bool engaged = Classes.Mutator.forciblyEngageMutator(secondarg);
+                                if (engaged)
+                                {
+                                    response = "Successfully found and overriden";
+                                }
+                                else
+                                {
+                                    response = "There is no mutator with such name!";
+                                }
                                 return true;
                             }
                             break;
+                        case "delmutator":
+                            string secondarge;
+                            try
+                            {
+                                secondarge = arguments.Array[2];
+                            }
+                            catch (Exception)
+                            {
+                                secondarge = "error";
+                            }
+                            if (secondarge == "error")
+                            {
+                                response = "Required mutator id!";
+                                return false;
+                            }
+                            else
+                            {
+                                bool engaged = Classes.Mutator.forciblyDestroyMutator(secondarge);
+                                if (engaged)
+                                {
+                                    response = "Successfully found and removed!";
+                                }
+                                else
+                                {
+                                    response = "There is no mutator with such name!";
+                                }
+                                return true;
+                            }
+                            break;
+                        case "lockevent":
+                            if (Plugin.isEventFrozen)
+                            {
+                                response = "The event was unfrozen successfully!";
+                                Plugin.isEventFrozen = false;
+                            }
+                            else
+                            {
+                                response = "The event was frozen successfully!";
+                                Plugin.isEventFrozen = true;
+                            }
+                            return true;
+                        case "listmutators":
+                            response = "";
+                            foreach(var mut in Plugin.loadedMutators)
+                            {
+                                response += $"\nCommandName: {mut.commandName}; Name: {mut.hudName}";
+                            }
+                            return true;
                         default:
-                            response = "Syntax: \nfg_override damage\nfg_override players\n\n<color=yellow>Warning! Dev Mode active and not suitable for production!</color>";
+                            response = "Syntax: \nfg_override damage\nfg_override players\nfg_override mutator [mutator dev_name]\nfg_override respawnra\n\n<color=yellow>Warning! Dev Mode active and not suitable for production!</color>";
                             return false;
                             break;
                     }
                 }
                 else
                 {
-                    response = "Overrides disabled, because plugin is not in dev mode!";
+                    response = "Overrides disabled, because plugin is not in dev mode! If you are reading this, you are probably not a developer :/";
                     return false;
                 }
             }
             else
             {
-                response = "Insufficent Permissions. Required: fg.override. Contact owner or local system administator if you beleive this is a mistake!\n\nIf you are an owner/local system administator, edit permissions.yml in Exiled config folder to grant permission to a certain group, " +
-                    "then type reload all in RA to apply permission changes!";
+                response = "Insufficent Permissions. Required: fg.override.";
                 return false;
             }
         }
