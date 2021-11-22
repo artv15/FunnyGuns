@@ -1,3 +1,4 @@
+
 # Funny Guns
 Some sort of auto-event created by stoopid me
 
@@ -10,25 +11,28 @@ Auto-event consists of 5 stages, at which:
  - Stage 4: 3 mutators, damage is 2x!
  - Stage 5: Instant death (health is drained), no mutators, damage is 5x!
 
-## How do mutators work?
-~~Pure random~~ 
-**I am not talking how they are assigned!**
-At first, plugin loads all mutators, designated at WaitingForPlayers. Adding one looks like this:
 
-    Plugin.loadedMutators.Add(Classes.Mutator.initialize("<color=orange>Двери заклинило</color>", "doorJam", () => { Mutators.doorJam = true; }, () => { Mutators.doorJam = false; }, (pl) => { }));
-As you can see, mutator is added to Plugin.loadedMutators list. When stage changes, we select random event, based on index. To select one, we do some unity random number generator. 
-That's how we do it.
+## Mutators' events and their initialization
+Each mutator object has 3 methods.
+On assigned (first one)
+On unassigned (second one)
+and On player respawn (third one)
 
- 1. We get count of loaded mutators
- 2. We assign a variable named i
- 3. We give the plugin 50 attempts to select random mutator
- 4. If it selects anything, we override an error placeholder
- 5. If not, we assign a mutator, which does nothing, but displays this: ```[ERROR] Failed to randomly select mutator, no mutator initiated.```
- 6. We add it to selected mutators and invoke it's engaged method
- 
-`
-    selected.engage.Invoke();
-    Plugin.engagedMutators.Add(selected);
-`
+2 first methods don't receive any arguments, but have code, which will be executed.
+The last method get's player object. This event will be called only when a player respawns **AND** passes abuse check. *(check PlayerFuckingDied function)*
 
-That's it! That's how you do it! Good luck in modifying the plugin!
+All mutators are initialized in WaitingForPlayers function (EventHandler.cs)
+This is an example of assignment in pseudo-code
+
+    LoadedMutator list -> Add object with properties: 
+    1. Hud name - "<color=yellow>Жёлтая пчёлка - жжжъъж</color>"
+    2. Console name - "zzhzhzh"
+    3. Engaged method: () => { Log.Debug("zzhzhzh"); }
+    4. Disengaged method () => { Log.Debug("no zzhzhzh"); }
+    5. Player respawn method (Exiled.API.Features.Player pl) => { pl.Broadcast(5, "Bees are going in!"); }
+    And that's it!
+
+Player respawn method is required!
+
+# Have an idea, suggestion?
+File an issue! I'm gonna look through it!
