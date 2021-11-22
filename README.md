@@ -1,6 +1,6 @@
 
 # Funny Guns
-Some sort of auto-event created by stoopid me
+Some sort of auto-event for SCP:Secret Lab servers based on Exiled created by stoopid me
 
 ## Description
 Auto-event consists of 5 stages, at which:
