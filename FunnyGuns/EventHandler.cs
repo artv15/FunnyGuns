@@ -142,6 +142,9 @@ namespace FunnyGuns
                         case 11:
                             msg += "<color=yellow>Если в лифте не зажать C, то ваше нахождение в нём будет раскрыто!</color>";
                             break;
+                        case 12:
+                            msg += "<color=yellow>Каждую смерть, касси будет озвучивать её. Если ваших тиммейтов осталось мало, не рекомендуется пушить!</color>";
+                            break;
                     }
                     ev.Player.Broadcast(10, msg);
                 }
