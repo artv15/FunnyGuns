@@ -64,6 +64,8 @@ namespace FunnyGuns
             }
         }
 
+        
+
         [Obsolete("Please, use methods of Classes.Mutator instead! Possible alternative: Classts.Mutator.disableAll()")]
         public static void disableMutators()
         {

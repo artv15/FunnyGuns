@@ -12,39 +12,6 @@ namespace FunnyGuns.Commands
     [CommandHandler(typeof(ClientCommandHandler))]
     class ShopCommand : ICommand
     {
-        /*
-         This is shop. You can add products by adding new cases to switch (firstarg)
-         Don't forget to add items to display!
-         */
-        //Item Code
-        /*
-         case "'item'":
-                    try
-                    {
-                        if (Plugin.shopDict[sender.LogName] >= 'money')
-                        {
-                            if (Plugin.isRunning)
-                            {
-                                ahp(sender.LogName);
-                                response_give = $"PurchaseMessage! Ваш баланс: {Plugin.shopDict[sender.LogName]}";
-                            }
-                            else
-                            {
-                                response_give = $"Ивент не запущен!";
-                            }
-                        }
-                        else
-                        {
-                            response_give = $"Недостаточно монет! У вас {Plugin.shopDict[sender.LogName]}!";
-                        }
-                        break;
-                    }
-                    catch
-                    {
-                        response_give = $"Недостаточно монет! У вас 0!";
-                        break;
-                    }
-         */
         public string Command => "shop";
 
         public string[] Aliases => null;
@@ -101,7 +68,7 @@ namespace FunnyGuns.Commands
                 if (Plugin.isRunning)
                 {
                     var msg = $"<color=green>---Funny Guns > Shop---</color>\n" +
-                            $"<color=green>Ваш баланс: 0</color>\n\n<color=yellow>---Каталог---</color>\n";
+                            $"<color=green>Ваш баланс: 0</color> <color=red>[Не ининциализиновано!]</color>\n\n<color=yellow>---Каталог---</color>\n";
                     foreach (var listitem in Plugin.shopInventory)
                     {
                         msg += $"<color=yellow>{listitem.name} | {listitem.price} | .shop {listitem.commandname}</color>\n";

@@ -106,8 +106,10 @@ namespace FunnyGuns
                 }
                 else
                 {
-                    var msg = "<color=red>Вы умерли...</color> Вот вам небольшой совет:\n";
-                    int rand = UnityEngine.Random.Range(1, 12);
+                    var msg = "<color=red>Вы умерли...</color> Вот вам небольшой совет:";
+                    ev.Player.Broadcast(3, msg);
+                    msg = "";
+                    int rand = UnityEngine.Random.Range(1, 13);
                     switch (rand) {
                         case 1:
                             msg += "<color=yellow>Не обязательно спускаться в комплекс, можно караулить поверхность!</color>";
@@ -131,7 +133,8 @@ namespace FunnyGuns
                             msg += "<color=yellow>Если вы получаете крайне высокий урон от оружия - вы будете оглушены и замедлены!</color>";
                             break;
                         case 8:
-                            msg += "<color=yellow>Вы можете выпить колу во время мутатора `скорость движения увеличина` и бежать ещё быстрее без потерь!</color>";
+                            //guys im too lazy to fix this, this is a feature, not a bug!11!!
+                            msg += "<color=yellow>Вы можете выпить колу во время мутатора `скорость движения увеличина` и бежать ещё быстрее!</color>";
                             break;
                         case 9:
                             msg += "<color=yellow>Слушайте шаги, если нет другого источника информации. Он поможет вам понять направление противника!</color>";
@@ -143,7 +146,7 @@ namespace FunnyGuns
                             msg += "<color=yellow>Если в лифте не зажать C, то ваше нахождение в нём будет раскрыто!</color>";
                             break;
                         case 12:
-                            msg += "<color=yellow>Каждую смерть, касси будет озвучивать её. Если ваших тиммейтов осталось мало, не рекомендуется пушить!</color>";
+                            msg += "<color=yellow>Каждая смерть озвучивается касси. Если ваших тиммейтов осталось мало, не рекомендуется пушить!</color>";
                             break;
                     }
                     ev.Player.Broadcast(10, msg);
@@ -392,7 +395,13 @@ namespace FunnyGuns
             int i = 55;
             while (i > 0)
             {
-                pl.ShowHint($"\n\n\n\n\n\nФаза подготовки, <color=blue>идите в комплекс</color> или <color=red>готовьтесь обороняться</color>!\n<color=green>Урон во время фазы подготовки отключён.</color>\nОсталось <color=yellow>{i}</color> секунд.\n<color=yellow>.fg_event - инфа об ивенте  .fg_updates - обновления  .shop - магазин</color>");
+                string msg = $"\n\n\n\n\n\nФаза подготовки, <color=blue>идите в комплекс</color> или <color=red>готовьтесь обороняться</color>!\n<color=green>Урон во время фазы подготовки отключён.</color>\nОсталось <color=yellow>{i}</color> секунд.\n<color=yellow>.fg_event - инфа об ивенте  .fg_updates - обновления  .shop - магазин</color>";
+                if (Plugin.isDevMode)
+                {
+                    msg += $"\n<color=red>dev_mode is active, please, do not put it in production! | Активен режим разработки</color>";
+                }
+                pl.ShowHint(msg);
+                
                 i -= 1;
                 yield return Timing.WaitForSeconds(1f);
             }
@@ -440,6 +449,17 @@ namespace FunnyGuns
                         break;
                 }
                 Timing.CallDelayed(0.5f, () => ev.Player.Ammo[ammoType] = (ushort)(ev.Firearm.MaxAmmo + 10)); //Setting player's ammo to (weapon_max_ammo + 10) as a failsafe delayed
+                if (Classes.Mutator.mutatorExists("badShooting"))
+                {
+                    if (ev.Firearm.Type == ItemType.GunLogicer)
+                    {
+                        Timing.CallDelayed(5.2f, () => { ev.Firearm.Ammo = (byte)(ev.Firearm.MaxAmmo / 2); });
+                    }
+                    else
+                    {
+                        Timing.CallDelayed(3.5f, () => { ev.Firearm.Ammo = (byte)(ev.Firearm.MaxAmmo / 2); });
+                    }
+                }
             }
         }
 
@@ -875,6 +895,11 @@ namespace FunnyGuns
 
         public static void OnWaitingForPlayers()
         {
+            //Same mistake twice...
+
+            Plugin.loadedMutators.Clear();
+            Plugin.shopInventory.Clear();
+
             Plugin.suicideisKill = false;
             Plugin.shopInventory.Clear();
             Classes.Mutator.disableAll();
@@ -1016,7 +1041,7 @@ namespace FunnyGuns
             },
             (Player pl) =>
             { pl.EnableEffect(Exiled.API.Enums.EffectType.Scp207); }));
-            Plugin.loadedMutators.Add(Classes.Mutator.initialize($"<color=yellow>Нет света</color>", "lightsOut", () =>
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize($"<color=orange>Нет света</color>", "lightsOut", () =>
             {
                 Cassie.Message("Danger . light control system is .g4 .g4 .g4 error . error .g4 .g4 .g1. g2 3 . 2 . 1");
                 Timing.CallDelayed(Cassie.CalculateDuration("Danger . light control system is .g4 .g4 .g4 error . error .g4 .g4 .g1. g2 3 . 2 . 1") + 3f, () =>
@@ -1092,6 +1117,16 @@ namespace FunnyGuns
             {
                 pl.EnableEffect(Exiled.API.Enums.EffectType.Amnesia);
             }));
+            Plugin.loadedMutators.Add(Classes.Mutator.initialize("<color=red>Уменьшенная перезарядка</color>", "badShooting", () =>
+            {
+                //techincally, we just check if the mutator is running.
+            }, () =>
+            {
+                //techincally, we just check if the mutator is running.
+            }, (pl) =>
+            {
+                //techincally, we just check if the mutator is running.
+            }));
 
             Log.Debug("These mutators were successfully loaded!");
             foreach (var mut in Plugin.loadedMutators)
@@ -1108,6 +1143,15 @@ namespace FunnyGuns
              finally
              nailed it!
              */
+        }
+
+        static bool isWeaponType(ItemType it)
+        {
+            if (it == ItemType.GunAK || it == ItemType.GunShotgun || it == ItemType.GunCOM15 || it == ItemType.GunCOM18 || it == ItemType.GunCrossvec || it == ItemType.GunE11SR || it == ItemType.GunFSP9 || it == ItemType.GunLogicer || it == ItemType.GunRevolver)
+            {
+                return true;
+            }
+            else return false;
         }
     }
 }

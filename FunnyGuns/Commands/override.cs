@@ -162,7 +162,7 @@ namespace FunnyGuns.Commands
                                 Plugin.isEventFrozen = true;
                             }
                             return true;
-                        case "listmutators":M
+                        case "listmutators":
                             response = "";
                             foreach(var mut in Plugin.loadedMutators)
                             {
