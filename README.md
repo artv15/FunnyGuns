@@ -34,5 +34,10 @@ This is an example of assignment in pseudo-code
 
 Player respawn method is required!
 
+##Important
+
+Plugin is no longer updated and probably outdated.
+Tested on pre-christmas update.
+
 # Have an idea, suggestion?
 File an issue! I'm gonna look through it!
