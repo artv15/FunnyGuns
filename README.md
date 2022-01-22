@@ -34,7 +34,7 @@ This is an example of assignment in pseudo-code
 
 Player respawn method is required!
 
-##Important
+## Important
 
 Plugin is no longer updated and probably outdated.
 Tested on pre-christmas update.
